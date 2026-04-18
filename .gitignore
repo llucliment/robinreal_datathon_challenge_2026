@@ -1,5 +1,7 @@
 .env
 .DS_Store
+**/.DS_Store
+__MACOSX/
 .venv/
 .pytest_cache/
 __pycache__/
