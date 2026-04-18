@@ -12,8 +12,9 @@ The competition objective is search quality and ranking effectiveness. Teams imp
 
 **Install dependencies** (Python, uses `uv`):
 ```bash
-uv sync --dev
+UV_LINK_MODE=copy uv sync --dev
 ```
+> The project lives in OneDrive which doesn't support hardlinks; `UV_LINK_MODE=copy` is required. Prefix all `uv run` commands with it too.
 
 **Run the FastAPI backend** (port 8000):
 ```bash
