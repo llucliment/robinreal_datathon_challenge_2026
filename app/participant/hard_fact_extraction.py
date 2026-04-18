@@ -90,7 +90,12 @@ def _extract_with_llm(query: str) -> HardFilters:
                 "postal_code": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "Swiss 4-digit postal codes explicitly mentioned",
+                    "description": (
+                        "Swiss 4-digit postal codes explicitly stated as a location "
+                        "(e.g. 'PLZ 8001', 'postal code 8050'). "
+                        "NEVER extract price amounts (e.g. '2800 CHF'), room counts, "
+                        "or years as postal codes."
+                    ),
                 },
                 "canton": {
                     "type": "string",
@@ -106,11 +111,15 @@ def _extract_with_llm(query: str) -> HardFilters:
                 },
                 "min_rooms": {
                     "type": "number",
-                    "description": "Minimum rooms required. A studio counts as 1.",
+                    "description": "Minimum rooms. A studio = 1. '3 rooms' → 3.0.",
                 },
                 "max_rooms": {
                     "type": "number",
-                    "description": "Maximum rooms allowed",
+                    "description": (
+                        "Maximum rooms. '3 rooms' → 3.5 (Swiss half-room convention). "
+                        "'4 rooms' → 4.5. Only set equal to min_rooms if the user "
+                        "specifies an exact half-room value like '3.5-Zimmer'."
+                    ),
                 },
                 "features": {
                     "type": "array",
@@ -136,7 +145,13 @@ def _extract_with_llm(query: str) -> HardFilters:
             "required amenities, rent vs buy. "
             "Do NOT extract soft preferences such as 'bright', 'modern', 'quiet', "
             "'nice views', 'good transport', 'close to schools' — those are ranking "
-            "signals, not filters. Only set a field when the user clearly requires it."
+            "signals, not filters. Only set a field when the user clearly requires it.\n\n"
+            "IMPORTANT — Swiss room convention: listings use half-room increments "
+            "(1.5, 2.5, 3.5, 4.5 Zimmer). When a user says '3 rooms' or '3-room', "
+            "set min_rooms=3.0 and max_rooms=3.5 to include standard 3.5-Zimmer flats. "
+            "When a user says '4 rooms', set min_rooms=4.0 and max_rooms=4.5. "
+            "Only set max_rooms strictly equal to min_rooms if the user explicitly "
+            "says 'exactly' or specifies a half-room themselves (e.g. '3.5-Zimmer')."
         ),
         tools=[tool],
         tool_choice={"type": "any"},
@@ -185,7 +200,17 @@ def _detect_cities(q: str) -> list[str]:
 
 
 def _detect_postal_codes(q: str) -> list[str]:
-    candidates = re.findall(r"\b(\d{4})\b", q)
+    # Strip price amounts before scanning so "under 2800 CHF" doesn't yield postal code 2800
+    q_clean = re.sub(r"\d[\d\s']*\s*(?:chf|fr\.?|francs?|franken)\b", "", q, flags=re.IGNORECASE)
+    q_clean = re.sub(r"(?:chf|fr\.?)\s*\d[\d\s']*", "", q_clean, flags=re.IGNORECASE)
+    q_clean = re.sub(
+        r"(?:under|over|max(?:imum)?|min(?:imum)?|up\s+to|at\s+most|at\s+least|"
+        r"bis(?:zu)?|ab|unter|über|mindestens)\s+\d+",
+        "",
+        q_clean,
+        flags=re.IGNORECASE,
+    )
+    candidates = re.findall(r"\b(\d{4})\b", q_clean)
     return [c for c in candidates if 1000 <= int(c) <= 9999]
 
 
@@ -205,7 +230,8 @@ def _detect_price(q: str) -> tuple[int | None, int | None]:
         return int(s.replace("'", "").replace(" ", ""))
 
     m = re.search(
-        r"(?:under|max(?:imum)?|up\s+to|bis(?:zu)?|at\s+most)\s*(?:chf\s*)?(\d[\d\s']*)",
+        r"(?:under|less\s+than|fewer\s+than|no\s+more\s+than|not\s+more\s+than"
+        r"|max(?:imum)?|up\s+to|bis(?:zu)?|at\s+most)\s*(?:chf\s*)?(\d[\d\s']*)",
         q,
     )
     if m:
@@ -231,7 +257,12 @@ def _detect_rooms(q: str) -> tuple[float | None, float | None]:
     m = re.search(r"(\d+(?:[.,]\d)?)\s*[-\s]?(?:room|zimmer|pièce|piece|zi\b)", q)
     if m:
         rooms = float(m.group(1).replace(",", "."))
-        return rooms, rooms
+        # If the user specified a half-room themselves (e.g. "3.5-Zimmer"), use exact.
+        # Otherwise add 0.5 to max to cover Swiss half-room listings (3.5-Zimmer for a
+        # "3-room" request, 4.5-Zimmer for a "4-room" request, etc.)
+        if rooms != int(rooms):
+            return rooms, rooms
+        return rooms, rooms + 0.5
     if "studio" in q:
         return 1.0, 1.5
     return None, None

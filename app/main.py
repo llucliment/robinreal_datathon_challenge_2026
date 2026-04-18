@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
+from dotenv import load_dotenv
+
+load_dotenv()  # loads .env before any os.getenv() or SDK client is initialised
+
 from fastapi import FastAPI
 from starlette.staticfiles import StaticFiles
 
