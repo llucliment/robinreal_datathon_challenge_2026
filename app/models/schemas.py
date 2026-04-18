@@ -20,6 +20,9 @@ class HardFilters(BaseModel):
     features: list[str] | None = None
     offer_type: str | None = None
     object_category: list[str] | None = None
+    min_area: int | None = Field(default=None, ge=0)
+    max_area: int | None = Field(default=None, ge=0)
+    available_before: str | None = None  # ISO date YYYY-MM-DD; listings available on/before this date
     limit: int = Field(default=20, ge=1, le=500)
     offset: int = Field(default=0, ge=0)
     sort_by: Literal["price_asc", "price_desc", "rooms_asc", "rooms_desc"] | None = None

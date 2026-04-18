@@ -49,9 +49,16 @@ def _extract_with_llm(query: str) -> dict[str, Any]:
                         "properties": {
                             "label": {
                                 "type": "string",
+                                "enum": [
+                                    "bright", "modern", "renovated", "quiet", "spacious",
+                                    "cozy", "family-friendly", "views", "garden", "new build",
+                                    "pet-friendly", "parking", "affordable", "luxury",
+                                    "balcony", "elevator", "fireplace",
+                                    "transport", "shop", "school", "kindergarten",
+                                ],
                                 "description": (
-                                    "Short label for the preference, e.g. 'bright', "
-                                    "'modern kitchen', 'quiet street', 'good views'."
+                                    "Canonical soft-feature label. Pick the single closest "
+                                    "match from the enum list; do not combine labels."
                                 ),
                             },
                             "weight": {

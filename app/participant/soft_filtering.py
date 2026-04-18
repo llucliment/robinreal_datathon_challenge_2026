@@ -27,19 +27,149 @@ _SCHOOL_WORDS = {"school", "schule", "école", "gymnasium", "education"}
 _KINDERGARTEN_WORDS = {"kindergarten", "daycare", "nursery", "kita", "crèche"}
 _PROXIMITY_WORDS = {"near", "close", "walk", "commute", "distance", "proximity", "minutes"}
 
-# Synonym expansion for text-based scoring
+# ---------------------------------------------------------------------------
+# Multilingual synonym map — EN / DE / FR, including inflected forms.
+# Each key is the canonical label; values are all substrings to look for.
+# ---------------------------------------------------------------------------
 _SYNONYMS: dict[str, list[str]] = {
-    "bright": ["bright", "light", "sunny", "luminous", "hell", "licht", "sonnig", "lumineux", "ensoleillé"],
-    "modern": ["modern", "contemporary", "renovated", "renoviert", "récent", "modernisé", "updated", "aktuell"],
-    "quiet": ["quiet", "calm", "peaceful", "ruhig", "calme", "tranquil", "tranquille", "silent"],
-    "spacious": ["spacious", "large", "roomy", "geräumig", "grand", "großzügig", "vaste"],
-    "cozy": ["cozy", "cosy", "gemütlich", "charming", "charmant", "confortable", "warm"],
-    "renovated": ["renovated", "refurbished", "renoviert", "saniert", "rénové", "restored", "new kitchen"],
-    "family-friendly": ["family", "children", "kids", "familie", "kinder", "familienfreundlich", "playground"],
-    "views": ["view", "views", "panorama", "aussicht", "vue", "panoramique", "scenery", "mountains"],
-    "garden": ["garden", "garten", "jardin", "outdoor", "yard", "terrace", "terrasse"],
-    "new build": ["new build", "neubau", "new construction", "newly built", "erstbezug"],
-    "pet-friendly": ["pet", "dog", "cat", "animal", "haustier", "tier"],
+    "bright": [
+        # English
+        "bright", "well-lit", "well lit", "sunny", "light-filled", "light filled",
+        "sun-drenched", "luminous",
+        # German (base + common inflections)
+        "hell", "helle", "hellen", "heller", "helles",
+        "licht", "lichte", "lichten", "lichter", "lichtes",
+        "sonnig", "sonnige", "sonnigen", "sonniger",
+        "lichtdurchflutet", "sonnendurchflutet", "lichtdurchflutete",
+        # French
+        "lumineux", "lumineuse", "ensoleillé", "ensoleillée",
+        "clair", "claire", "bien éclairé", "bien eclaire",
+    ],
+    "modern": [
+        # English
+        "modern", "contemporary", "updated", "fresh",
+        # German
+        "modern", "moderne", "modernen", "moderner", "modernes",
+        "zeitgemäss", "zeitgemäß", "aktuell", "aktuelle",
+        # French
+        "moderne", "récent", "récente", "actuel", "actuelle", "contemporain",
+    ],
+    "renovated": [
+        # English
+        "renovated", "refurbished", "restored", "new kitchen", "new bathroom",
+        # German
+        "renoviert", "renovierte", "renovierten",
+        "saniert", "sanierte", "sanierten", "kernsaniert",
+        "neuwertig", "erstbezug", "komplett renoviert",
+        # French
+        "rénové", "rénovée", "restauré", "restaurée", "remis à neuf",
+    ],
+    "quiet": [
+        # English
+        "quiet", "calm", "peaceful", "silent", "tranquil", "serene",
+        # German
+        "ruhig", "ruhige", "ruhigen", "ruhiger",
+        "still", "stille", "leise", "geräuscharm",
+        # French
+        "calme", "tranquille", "paisible", "silencieux", "silencieuse",
+    ],
+    "spacious": [
+        # English
+        "spacious", "roomy", "generous", "large", "big",
+        # German
+        "geräumig", "geräumige", "geräumigen",
+        "großzügig", "großzügige", "grosszügig", "grosszügige",
+        "weitläufig", "weiträumig",
+        # French
+        "spacieux", "spacieuse", "grand", "grande", "vaste",
+    ],
+    "cozy": [
+        # English
+        "cozy", "cosy", "charming", "warm", "inviting", "homely",
+        # German
+        "gemütlich", "gemütliche", "gemütlichen",
+        "heimelig", "wohnlich", "charmant", "charmante",
+        # French
+        "confortable", "douillet", "douillette", "charmant", "charmante",
+    ],
+    "family-friendly": [
+        # English
+        "family", "children", "kids", "playground", "child-friendly",
+        # German
+        "familie", "familien", "kinder", "kindgerecht",
+        "spielplatz", "familienfreundlich", "kinderfreundlich",
+        # French
+        "famille", "enfants", "familial", "familiale", "aire de jeux",
+    ],
+    "views": [
+        # English
+        "view", "views", "panorama", "scenery", "mountains", "lake view", "city view",
+        # German
+        "aussicht", "ausblick", "panorama",
+        "bergblick", "seeblick", "weitblick", "fernsicht",
+        # French
+        "vue", "panoramique", "vue sur le lac", "vue sur les montagnes",
+    ],
+    "garden": [
+        # English
+        "garden", "yard", "outdoor", "green space",
+        # German
+        "garten", "gartensitz", "gartenanteil",
+        "sitzplatz", "grünfläche", "grünanlage", "aussenbereich",
+        # French
+        "jardin", "espace vert", "extérieur", "terrasse",
+    ],
+    "new build": [
+        # English
+        "new build", "new construction", "newly built", "brand new",
+        # German
+        "neubau", "neubauwohnung", "erstbezug", "neuwertig",
+        # French
+        "construction neuve", "neuf", "neuve",
+    ],
+    "pet-friendly": [
+        # English
+        "pet", "dog", "cat", "animal", "pets allowed",
+        # German
+        "haustier", "haustiere", "hund", "katze",
+        "tier", "haustiererlaubt", "haustiere erlaubt",
+        # French
+        "animaux", "animal", "chien", "chat", "animaux admis",
+    ],
+    "parking": [
+        # English
+        "parking", "car space", "garage",
+        # German
+        "parkplatz", "stellplatz", "tiefgarage", "einstellplatz", "autoabstellplatz",
+        # French
+        "parking", "place de parc", "garage",
+    ],
+    "affordable": [
+        # English
+        "affordable", "cheap", "budget", "good value", "reasonable", "low cost",
+        # German
+        "günstig", "günstige", "preiswert", "erschwinglich",
+        # French
+        "abordable", "économique", "bon marché",
+    ],
+    "luxury": [
+        # English
+        "luxury", "premium", "high-end", "upscale", "exclusive",
+        # German
+        "luxus", "exklusiv", "exklusive", "hochwertig", "hochwertige",
+        # French
+        "luxueux", "luxueuse", "prestige", "haut de gamme",
+    ],
+    "balcony": [
+        # English/multilingual — also a structured feature but text confirms it
+        "balcony", "balcon", "balkon", "terrasse", "terrassa", "loggia",
+    ],
+    "elevator": [
+        "elevator", "lift", "aufzug", "ascenseur",
+    ],
+    "fireplace": [
+        "fireplace", "kamin", "cheminée", "cheminee", "offener kamin",
+    ],
 }
 
 _NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
@@ -54,6 +184,20 @@ _TRANSPORT_THRESH_M = 1000.0
 _SHOP_THRESH_M = 500.0
 _SCHOOL_THRESH_M = 800.0
 _KINDERGARTEN_THRESH_M = 600.0
+
+
+def _extract_feature_tags(listing: dict[str, Any]) -> set[str]:
+    """
+    Pre-compute which canonical soft-feature labels are present in a listing.
+    Done once per listing so _score_preference doesn't redo the substring scan
+    for every preference query.
+    """
+    text = _listing_text(listing)
+    tags: set[str] = set()
+    for tag, synonyms in _SYNONYMS.items():
+        if tag in text or any(s in text for s in synonyms):
+            tags.add(tag)
+    return tags
 
 
 def filter_soft_facts(
@@ -82,7 +226,14 @@ def filter_soft_facts(
     landmark_coords = _geocode_landmark(criteria.target_landmark) if criteria.target_landmark else None
 
     for listing in candidates:
+        listing["_feature_tags"] = _extract_feature_tags(listing)
         listing["soft_scores"] = _score_listing(listing, criteria, price_stats, landmark_coords)
+
+    # Always add a price_value score so ranking can use it as a tiebreaker
+    for listing in candidates:
+        listing["soft_scores"]["price_value"] = _price_affordability_score(
+            listing.get("price"), price_stats
+        )
 
     return candidates
 
@@ -98,11 +249,12 @@ def _score_listing(
     landmark_coords: tuple[float, float] | None,
 ) -> dict[str, float]:
     text = _listing_text(listing)
+    feature_tags: set[str] = listing.get("_feature_tags") or set()
     scores: dict[str, float] = {}
 
     for pref in criteria.preferences:
         scores[pref.label] = _score_preference(
-            pref.label.lower(), listing, text, price_stats, landmark_coords
+            pref.label.lower(), listing, text, feature_tags, price_stats, landmark_coords
         )
 
     # Always add a proximity score when a landmark was resolved so ranking.py
@@ -118,7 +270,10 @@ def _score_listing(
 
     # Negative-signal penalty: fraction of negative terms found in listing text.
     if criteria.negative_signals:
-        hits = sum(1 for sig in criteria.negative_signals if sig.lower() in text)
+        hits = sum(
+            1 for sig in criteria.negative_signals
+            if sig.lower() in text or sig.lower() in feature_tags
+        )
         scores["negative_signal_penalty"] = hits / len(criteria.negative_signals)
 
     return scores
@@ -128,6 +283,7 @@ def _score_preference(
     label: str,
     listing: dict[str, Any],
     text: str,
+    feature_tags: set[str],
     price_stats: dict[str, float],
     landmark_coords: tuple[float, float] | None,
 ) -> float:
@@ -166,7 +322,12 @@ def _score_preference(
             dist_km = _haversine(landmark_coords[0], landmark_coords[1], float(lat), float(lon))
             return max(0.0, 1.0 - dist_km / _PROXIMITY_MAX_KM)
 
-    # ── text-based scoring (fallback for all other labels) ────────────────
+    # ── pre-extracted feature tag (canonical label hit) ──────────────────
+    for tag in feature_tags:
+        if tag in label or label in tag or _words_overlap(label, tag):
+            return 1.0
+
+    # ── text-based scoring (last resort for labels outside the synonym map) ─
     return _text_match_score(label, text)
 
 
@@ -202,11 +363,22 @@ def _price_affordability_score(price: Any, stats: dict[str, float]) -> float:
 # ---------------------------------------------------------------------------
 
 def _listing_text(listing: dict[str, Any]) -> str:
-    parts = [listing.get("title") or "", listing.get("description") or ""]
+    parts = [
+        listing.get("title") or "",
+        listing.get("description") or "",
+        listing.get("image_description") or "",
+    ]
     features = listing.get("features")
     if isinstance(features, list):
         parts.extend(str(f) for f in features)
     return " ".join(parts).lower()
+
+
+def _words_overlap(a: str, b: str) -> bool:
+    """True if the two labels share at least one significant word (>3 chars)."""
+    words_a = {w for w in a.split() if len(w) > 3}
+    words_b = {w for w in b.split() if len(w) > 3}
+    return bool(words_a & words_b)
 
 
 def _text_match_score(label: str, text: str) -> float:
@@ -234,17 +406,19 @@ def _text_match_score(label: str, text: str) -> float:
 
 @lru_cache(maxsize=64)
 def _geocode_landmark(landmark: str) -> tuple[float, float] | None:
-    """Return (lat, lon) for a landmark using the Nominatim API, or None on failure."""
+    """Return (lat, lon) for a landmark using Nominatim; retries without 'Switzerland' on miss."""
+    queries = [f"{landmark} Switzerland", landmark]
     try:
         with httpx.Client(timeout=5.0) as client:
-            resp = client.get(
-                _NOMINATIM_URL,
-                params={"q": f"{landmark} Switzerland", "format": "json", "limit": 1},
-                headers=_NOMINATIM_HEADERS,
-            )
-        data = resp.json()
-        if data:
-            return float(data[0]["lat"]), float(data[0]["lon"])
+            for q in queries:
+                resp = client.get(
+                    _NOMINATIM_URL,
+                    params={"q": q, "format": "json", "limit": 1},
+                    headers=_NOMINATIM_HEADERS,
+                )
+                data = resp.json()
+                if data:
+                    return float(data[0]["lat"]), float(data[0]["lon"])
     except Exception:
         pass
     return None

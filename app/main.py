@@ -18,6 +18,9 @@ from app.harness.bootstrap import bootstrap_database
 async def lifespan(app: FastAPI):
     settings = get_settings()
     bootstrap_database(db_path=settings.db_path, raw_data_dir=settings.raw_data_dir)
+    # Pre-warm the sentence-transformers model so the first query is not slow.
+    from app.participant.ranking import _get_embed_model
+    _get_embed_model()
     yield
 
 

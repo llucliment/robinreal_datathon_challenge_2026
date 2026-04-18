@@ -45,6 +45,7 @@ def create_schema(connection: sqlite3.Connection) -> None:
             feature_private_laundry INTEGER,
             feature_minergie_certified INTEGER,
             features_json TEXT NOT NULL,
+            image_description TEXT,
             offer_type TEXT,
             object_category TEXT,
             object_type TEXT,

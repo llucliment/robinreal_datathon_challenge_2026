@@ -24,6 +24,9 @@ class HardFilterParams:
     features: list[str] | None = None
     offer_type: str | None = None
     object_category: list[str] | None = None
+    min_area: int | None = None
+    max_area: int | None = None
+    available_before: str | None = None
     limit: int = 20
     offset: int = 0
     sort_by: str | None = None
@@ -88,6 +91,21 @@ def search_listings(db_path: Path, filters: HardFilterParams) -> list[dict[str, 
         where_clauses.append("rooms <= ?")
         params.append(filters.max_rooms)
 
+    if filters.min_area is not None:
+        where_clauses.append("area >= ?")
+        params.append(filters.min_area)
+
+    if filters.max_area is not None:
+        where_clauses.append("area <= ?")
+        params.append(filters.max_area)
+
+    if filters.available_before is not None:
+        # Treat NULL and the sentinel '1970-01-01' as immediately available (always valid).
+        where_clauses.append(
+            "(available_from IS NULL OR available_from = '1970-01-01' OR available_from <= ?)"
+        )
+        params.append(filters.available_before)
+
     if filters.offer_type:
         where_clauses.append("UPPER(offer_type) = ?")
         params.append(filters.offer_type.upper())
@@ -126,6 +144,7 @@ def search_listings(db_path: Path, filters: HardFilterParams) -> list[dict[str, 
             distance_school_1,
             distance_school_2,
             features_json,
+            image_description,
             offer_type,
             object_category,
             object_type,

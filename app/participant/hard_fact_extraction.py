@@ -50,6 +50,164 @@ _CANTON_NAMES: dict[str, str] = {
     "neuchâtel": "NE", "neuchatel": "NE",
 }
 
+# ---------------------------------------------------------------------------
+# City name → all known DB spellings
+# Built from actual DB values: covers umlaut/accent variants and multi-language
+# names for the same city.
+# ---------------------------------------------------------------------------
+_CITY_DB_VARIANTS: dict[str, list[str]] = {
+    # Zürich  (877 "Zürich" + 71 "Zurich" in DB)
+    "zurich":       ["Zürich", "Zurich"],
+    "zürich":       ["Zürich", "Zurich"],
+    "zuerich":      ["Zürich", "Zurich"],
+    # Geneva  (488 "Genève" + 48 "Geneva" + 40 "Genf")
+    "geneva":       ["Genève", "Geneva", "Genf"],
+    "genève":       ["Genève", "Geneva", "Genf"],
+    "geneve":       ["Genève", "Geneva", "Genf"],
+    "genf":         ["Genf", "Genève", "Geneva"],
+    # Biel/Bienne  (79 "Biel/Bienne" + 23 "Biel")
+    "biel":         ["Biel/Bienne", "Biel"],
+    "bienne":       ["Biel/Bienne"],
+    "biel/bienne":  ["Biel/Bienne", "Biel"],
+    # Cities with umlauts / accents
+    "neuchatel":        ["Neuchâtel"],
+    "neuchâtel":        ["Neuchâtel"],
+    "delemont":         ["Delémont"],
+    "delémont":         ["Delémont"],
+    "délémont":         ["Delémont"],
+    "dubendorf":        ["Dübendorf"],
+    "dübendorf":        ["Dübendorf"],
+    "emmenbrucke":      ["Emmenbrücke"],
+    "emmenbrücke":      ["Emmenbrücke"],
+    "bulach":           ["Bülach"],
+    "bülach":           ["Bülach"],
+    "koniz":            ["Köniz"],
+    "köniz":            ["Köniz"],
+    "anzere":           ["Anzère"],
+    "anzère":           ["Anzère"],
+    # German/French name pairs
+    "bern":             ["Bern"],
+    "berne":            ["Bern"],
+    "basel":            ["Basel"],
+    "bale":             ["Basel"],
+    "bâle":             ["Basel"],
+    "lucerne":          ["Luzern"],
+    "luzern":           ["Luzern"],
+    "fribourg":         ["Fribourg"],
+    "freiburg":         ["Fribourg"],
+    "solothurn":        ["Solothurn"],
+    "soleure":          ["Solothurn"],
+    "chur":             ["Chur"],
+    "coire":            ["Chur"],
+    "st. gallen":       ["St. Gallen"],
+    "st gallen":        ["St. Gallen"],
+    "saint-gall":       ["St. Gallen"],
+    "saint gall":       ["St. Gallen"],
+    # Cities with canton suffixes in DB
+    "carouge":          ["Carouge GE"],
+    "renens":           ["Renens VD"],
+    "wil":              ["Wil SG"],
+    # Simple pass-through (no variants, but normalise spelling)
+    "lausanne":         ["Lausanne"],
+    "winterthur":       ["Winterthur"],
+    "lugano":           ["Lugano"],
+    "thun":             ["Thun"],
+    "sion":             ["Sion"],
+    "nyon":             ["Nyon"],
+    "yverdon":          ["Yverdon-les-Bains"],
+    "yverdon-les-bains":["Yverdon-les-Bains"],
+    "la chaux-de-fonds":["La Chaux-de-Fonds"],
+    "chaux-de-fonds":   ["La Chaux-de-Fonds"],
+    "aarau":            ["Aarau"],
+    "schaffhausen":     ["Schaffhausen"],
+    "uster":            ["Uster"],
+    "zug":              ["Zug"],
+    "bellinzona":       ["Bellinzona"],
+    "locarno":          ["Locarno"],
+    "lugano":           ["Lugano"],
+    "crans-montana":    ["Crans-Montana"],
+    "montreux":         ["Montreux"],
+    "vevey":            ["Vevey"],
+    "morges":           ["Morges"],
+    "bulle":            ["Bulle"],
+    "meyrin":           ["Meyrin"],
+    "vernier":          ["Vernier"],
+    "grand-lancy":      ["Grand-Lancy"],
+    "le locle":         ["Le Locle"],
+    "porrentruy":       ["Porrentruy"],
+    "monthey":          ["Monthey"],
+    "martigny":         ["Martigny"],
+    "payerne":          ["Payerne"],
+    "olten":            ["Olten"],
+    "pully":            ["Pully"],
+    "prilly":           ["Prilly"],
+    "allschwil":        ["Allschwil"],
+    "pratteln":         ["Pratteln"],
+    "dietikon":         ["Dietikon"],
+    "schlieren":        ["Schlieren"],
+    "adliswil":         ["Adliswil"],
+    "wallisellen":      ["Wallisellen"],
+    "kriens":           ["Kriens"],
+    "langenthal":       ["Langenthal"],
+    "grenchen":         ["Grenchen"],
+    "burgdorf":         ["Burgdorf"],
+    "herisau":          ["Herisau"],
+    "kreuzlingen":      ["Kreuzlingen"],
+    "baar":             ["Baar"],
+    "mendrisio":        ["Mendrisio"],
+    "chiasso":          ["Chiasso"],
+    "bellinzona":       ["Bellinzona"],
+    "locarno":          ["Locarno"],
+    "bioggio":          ["Bioggio"],
+    "zollikofen":       ["Zollikofen"],
+    "gland":            ["Gland"],
+    "versoix":          ["Versoix"],
+    "nyon":             ["Nyon"],
+    "marly":            ["Marly"],
+    "crissier":         ["Crissier"],
+    "bussigny":         ["Bussigny"],
+    "cointrin":         ["Cointrin"],
+    "le grand-saconnex":["Le Grand-Saconnex"],
+    "les acacias":      ["Les Acacias"],
+    "plan-les-ouates":  ["Plan-les-Ouates"],
+    "weinfelden":       ["Weinfelden"],
+    "frauenfeld":       ["Frauenfeld"],
+    "liestal":          ["Liestal"],
+    "riehen":           ["Riehen"],
+    "binningen":        ["Binningen"],
+    "muttenz":          ["Muttenz"],
+    "münchenbuchsee":   ["Münchenbuchsee"],
+    "munchenbuchsee":   ["Münchenbuchsee"],
+    "zofingen":         ["Zofingen"],
+    "lyss":             ["Lyss"],
+    "wabern":           ["Wabern"],
+    "ostermundigen":    ["Ostermundigen"],
+    "biberist":         ["Biberist"],
+    "aigle":            ["Aigle"],
+    "satigny":          ["Satigny"],
+    "ecublens":         ["Ecublens VD"],
+}
+
+
+def _expand_cities(cities: list[str]) -> list[str]:
+    """Map any user-input city spelling to all known DB spellings for that city."""
+    expanded: list[str] = []
+    seen: set[str] = set()
+    for city in cities:
+        variants = _CITY_DB_VARIANTS.get(city.lower())
+        if variants:
+            for v in variants:
+                if v not in seen:
+                    expanded.append(v)
+                    seen.add(v)
+        else:
+            # Unknown city: pass as-is so the SQL still gets a chance to match
+            if city not in seen:
+                expanded.append(city)
+                seen.add(city)
+    return expanded
+
+
 _LLM_FEATURES = [
     "balcony", "elevator", "parking", "garage", "fireplace",
     "child_friendly", "pets_allowed", "new_build",
@@ -121,6 +279,22 @@ def _extract_with_llm(query: str) -> HardFilters:
                         "specifies an exact half-room value like '3.5-Zimmer'."
                     ),
                 },
+                "min_area": {
+                    "type": "integer",
+                    "description": "Minimum living area in square metres (e.g. 'at least 80 sqm' → 80)",
+                },
+                "max_area": {
+                    "type": "integer",
+                    "description": "Maximum living area in square metres",
+                },
+                "available_before": {
+                    "type": "string",
+                    "description": (
+                        "Latest acceptable availability date in ISO format YYYY-MM-DD. "
+                        "Set when the user says 'available by July 2026', 'from September', etc. "
+                        "Use the first day of the stated month when only month/year is given."
+                    ),
+                },
                 "features": {
                     "type": "array",
                     "items": {"type": "string", "enum": _LLM_FEATURES},
@@ -161,19 +335,23 @@ def _extract_with_llm(query: str) -> HardFilters:
     for block in response.content:
         if block.type == "tool_use":
             data: dict[str, Any] = block.input
+            raw_cities: list[str] = data.get("city") or []
             return HardFilters(
-                city=data.get("city") or None,
+                city=_expand_cities(raw_cities) or None,
                 postal_code=data.get("postal_code") or None,
                 canton=data.get("canton") or None,
                 min_price=data.get("min_price"),
                 max_price=data.get("max_price"),
                 min_rooms=data.get("min_rooms"),
                 max_rooms=data.get("max_rooms"),
+                min_area=data.get("min_area"),
+                max_area=data.get("max_area"),
+                available_before=data.get("available_before"),
                 features=data.get("features") or None,
-                offer_type=data.get("offer_type"),
+                offer_type=data.get("offer_type") or "RENT",
             )
 
-    return HardFilters()
+    return HardFilters(offer_type="RENT")
 
 
 # ---------------------------------------------------------------------------
@@ -182,21 +360,28 @@ def _extract_with_llm(query: str) -> HardFilters:
 
 def _extract_with_rules(query: str) -> HardFilters:
     q = query.lower()
+    price = _detect_price(q)
+    rooms = _detect_rooms(q)
+    area = _detect_area(q)
     return HardFilters(
         city=_detect_cities(q) or None,
         postal_code=_detect_postal_codes(q) or None,
         canton=_detect_canton(q),
-        min_price=_detect_price(q)[0],
-        max_price=_detect_price(q)[1],
-        min_rooms=_detect_rooms(q)[0],
-        max_rooms=_detect_rooms(q)[1],
+        min_price=price[0],
+        max_price=price[1],
+        min_rooms=rooms[0],
+        max_rooms=rooms[1],
+        min_area=area[0],
+        max_area=area[1],
+        available_before=_detect_available_before(q),
         features=_detect_features(q) or None,
-        offer_type=_detect_offer_type(q),
+        offer_type=_detect_offer_type(q) or "RENT",
     )
 
 
 def _detect_cities(q: str) -> list[str]:
-    return [c.title() for c in _SWISS_CITIES if c in q]
+    matched = [c for c in _SWISS_CITIES if c in q]
+    return _expand_cities([c.title() for c in matched])
 
 
 def _detect_postal_codes(q: str) -> list[str]:
@@ -253,19 +438,104 @@ def _detect_price(q: str) -> tuple[int | None, int | None]:
     return min_price, max_price
 
 
+_ROOM_UNIT = r"(?:room|zimmer|pièce|piece|bedroom|zi\b)"
+
+
 def _detect_rooms(q: str) -> tuple[float | None, float | None]:
-    m = re.search(r"(\d+(?:[.,]\d)?)\s*[-\s]?(?:room|zimmer|pièce|piece|zi\b)", q)
+    # Range: "3 to 5 rooms" / "between 3 and 5 rooms" / "3-5 Zimmer"
+    m = re.search(
+        r"(?:between\s+)?(\d+(?:[.,]\d)?)\s*(?:to|and|bis|-)\s*(\d+(?:[.,]\d)?)"
+        r"\s*[-\s]?" + _ROOM_UNIT,
+        q,
+    )
+    if m:
+        lo = float(m.group(1).replace(",", "."))
+        hi = float(m.group(2).replace(",", "."))
+        return lo, hi + (0.5 if hi == int(hi) else 0.0)
+
+    # Minimum: "at least 3 rooms" / "minimum 3 bedrooms" / "mindestens 3 Zimmer"
+    m = re.search(
+        r"(?:at\s+least|minimum|mindestens|min\.?|au\s+moins)\s+(\d+(?:[.,]\d)?)"
+        r"\s*[-\s]?" + _ROOM_UNIT,
+        q,
+    )
     if m:
         rooms = float(m.group(1).replace(",", "."))
-        # If the user specified a half-room themselves (e.g. "3.5-Zimmer"), use exact.
-        # Otherwise add 0.5 to max to cover Swiss half-room listings (3.5-Zimmer for a
-        # "3-room" request, 4.5-Zimmer for a "4-room" request, etc.)
+        return rooms, None
+
+    # Exact / plain "N rooms" / "N-room"
+    m = re.search(r"(\d+(?:[.,]\d)?)\s*[-\s]?" + _ROOM_UNIT, q)
+    if m:
+        rooms = float(m.group(1).replace(",", "."))
+        # Half-room specified explicitly → exact match; otherwise extend by 0.5
         if rooms != int(rooms):
             return rooms, rooms
         return rooms, rooms + 0.5
+
     if "studio" in q:
         return 1.0, 1.5
     return None, None
+
+
+def _detect_area(q: str) -> tuple[int | None, int | None]:
+    _SQM = r"(?:sqm|m²|m2|square\s+m(?:eters?|etres?)|qm)"
+    min_area: int | None = None
+    max_area: int | None = None
+
+    m = re.search(
+        r"(?:at\s+least|min(?:imum)?|mindestens)\s+(\d+)\s*" + _SQM, q
+    )
+    if m:
+        min_area = int(m.group(1))
+
+    m = re.search(
+        r"(?:under|less\s+than|max(?:imum)?|up\s+to|at\s+most)\s+(\d+)\s*" + _SQM, q
+    )
+    if m:
+        max_area = int(m.group(1))
+
+    # Plain "80 sqm" with no qualifier → treat as minimum
+    if min_area is None and max_area is None:
+        m = re.search(r"(\d+)\s*" + _SQM, q)
+        if m:
+            min_area = int(m.group(1))
+
+    return min_area, max_area
+
+
+_MONTH_NUM: dict[str, int] = {
+    "january": 1, "jan": 1, "januar": 1,
+    "february": 2, "feb": 2, "februar": 2,
+    "march": 3, "mar": 3, "märz": 3,
+    "april": 4, "apr": 4,
+    "may": 5, "mai": 5,
+    "june": 6, "jun": 6, "juni": 6,
+    "july": 7, "jul": 7, "juli": 7,
+    "august": 8, "aug": 8,
+    "september": 9, "sep": 9,
+    "october": 10, "oct": 10, "oktober": 10,
+    "november": 11, "nov": 11,
+    "december": 12, "dec": 12, "dezember": 12,
+}
+
+
+def _detect_available_before(q: str) -> str | None:
+    # ISO date present verbatim
+    m = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", q)
+    if m:
+        return m.group(1)
+
+    # "by/from/available [in] <month> <year>" or "<month> <year>"
+    month_pat = "|".join(_MONTH_NUM)
+    m = re.search(
+        rf"(?:by|from|available(?:\s+from)?|ab|bis|dès|dès le)?\s*(?:in\s+)?({month_pat})\s+(\d{{4}})",
+        q,
+    )
+    if m:
+        month_num = _MONTH_NUM[m.group(1)]
+        return f"{m.group(2)}-{month_num:02d}-01"
+
+    return None
 
 
 def _detect_features(q: str) -> list[str]:

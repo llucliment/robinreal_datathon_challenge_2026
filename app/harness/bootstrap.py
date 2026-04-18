@@ -22,6 +22,7 @@ def bootstrap_database(*, db_path: Path, raw_data_dir: Path) -> None:
                 db_path,
             )
             return
+        _apply_migrations(db_path)
         return
 
     csv_paths = _csv_paths(raw_data_dir)
@@ -30,6 +31,18 @@ def bootstrap_database(*, db_path: Path, raw_data_dir: Path) -> None:
         create_schema(connection)
         import_csvs(connection, csv_paths)
         create_indexes(connection)
+
+
+def _apply_migrations(db_path: Path) -> None:
+    """Add new optional columns to an existing DB without rebuilding it."""
+    with get_connection(db_path) as connection:
+        existing = {
+            row[1] for row in connection.execute("PRAGMA table_info(listings)").fetchall()
+        }
+        if "image_description" not in existing:
+            connection.execute("ALTER TABLE listings ADD COLUMN image_description TEXT")
+            connection.commit()
+            logger.info("Migration applied: added image_description column.")
 
 
 def _csv_paths(raw_data_dir: Path) -> list[Path]:
