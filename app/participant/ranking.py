@@ -119,6 +119,9 @@ def _score(
     if proximity is not None:
         contributions.append((proximity * 1.0, "proximity to landmark", proximity))
         total_weight += 1.0
+        transit_min = soft_scores.get("transit_minutes_to_landmark")
+        if transit_min is not None:
+            contributions.append((0.0, "transit_minutes_to_landmark", transit_min))
 
     # ── price_value as constant tiebreaker (weight 0.2) ──────────────────
     price_value = soft_scores.get("price_value")
@@ -168,8 +171,12 @@ def _build_reason(
         parts.append("- " + ", ".join(missing[:3]))
 
     if proximity_raw is not None:
-        km_approx = round((1.0 - proximity_raw) * 30, 1)
-        parts.append(f"~{km_approx} km from landmark")
+        transit_min = next((raw for _, label, raw in contributions if label == "transit_minutes_to_landmark"), None)
+        if transit_min is not None:
+            parts.append(f"~{int(transit_min)} min by transit")
+        else:
+            km_approx = round((1.0 - proximity_raw) * 30, 1)
+            parts.append(f"~{km_approx} km from landmark")
 
     if price_raw is not None:
         if price_raw >= 0.65:

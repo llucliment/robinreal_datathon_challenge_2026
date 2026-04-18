@@ -252,8 +252,8 @@ def _compute_transit_scores(
     candidates: list[dict[str, Any]],
     landmark_coords: tuple[float, float],
     landmark_station: str,
-) -> dict[str, float]:
-    """Return {listing_id: transit_score} for top N candidates by haversine distance."""
+) -> dict[str, tuple[float, float | None]]:
+    """Return {listing_id: (score, minutes|None)} for top N candidates by haversine distance."""
     with_dist = [
         (_haversine(landmark_coords[0], landmark_coords[1], float(c["latitude"]), float(c["longitude"])), c)
         for c in candidates
@@ -262,19 +262,19 @@ def _compute_transit_scores(
     with_dist.sort(key=lambda x: x[0])
     top = with_dist[:_MAX_TRANSIT_CANDIDATES]
 
-    def _score_one(item: tuple) -> tuple[str, float]:
+    def _score_one(item: tuple) -> tuple[str, float, float | None]:
         dist_km, c = item
         station = _nearest_station_name(float(c["latitude"]), float(c["longitude"]))
         if station:
             minutes = _transit_minutes(station, landmark_station)
             if minutes is not None:
-                return c["listing_id"], _transit_score(minutes)
-        return c["listing_id"], max(0.0, 1.0 - dist_km / _PROXIMITY_MAX_KM)
+                return c["listing_id"], _transit_score(minutes), minutes
+        return c["listing_id"], max(0.0, 1.0 - dist_km / _PROXIMITY_MAX_KM), None
 
-    scores: dict[str, float] = {}
+    scores: dict[str, tuple[float, float | None]] = {}
     with ThreadPoolExecutor(max_workers=8) as pool:
-        for listing_id, score in pool.map(_score_one, top):
-            scores[listing_id] = score
+        for listing_id, score, minutes in pool.map(_score_one, top):
+            scores[listing_id] = (score, minutes)
     return scores
 
 
@@ -345,7 +345,7 @@ def _score_listing(
     criteria: SoftCriteria,
     price_stats: dict[str, float],
     landmark_coords: tuple[float, float] | None,
-    transit_scores: dict[str, float] | None = None,
+    transit_scores: dict[str, tuple[float, float | None]] | None = None,
 ) -> dict[str, float]:
     text = _listing_text(listing)
     feature_tags: set[str] = listing.get("_feature_tags") or set()
@@ -361,7 +361,10 @@ def _score_listing(
     if landmark_coords is not None:
         listing_id = listing.get("listing_id")
         if listing_id in transit_scores:
-            scores["proximity_to_landmark"] = transit_scores[listing_id]
+            score, minutes = transit_scores[listing_id]
+            scores["proximity_to_landmark"] = score
+            if minutes is not None:
+                scores["transit_minutes_to_landmark"] = minutes
         else:
             lat = listing.get("latitude")
             lon = listing.get("longitude")
@@ -389,7 +392,7 @@ def _score_preference(
     feature_tags: set[str],
     price_stats: dict[str, float],
     landmark_coords: tuple[float, float] | None,
-    transit_scores: dict[str, float] | None = None,
+    transit_scores: dict[str, tuple[float, float | None]] | None = None,
 ) -> float:
     transit_scores = transit_scores or {}
 
@@ -399,8 +402,11 @@ def _score_preference(
     if any(w in label for w in _EXPENSIVE_WORDS):
         return 1.0 - _price_affordability_score(listing.get("price"), price_stats)
 
-    # ── structured proximity fields ───────────────────────────────────────
+    # ── transport: transit time to landmark beats distance to nearest stop ─
     if any(w in label for w in _TRANSPORT_WORDS):
+        listing_id = listing.get("listing_id")
+        if landmark_coords and listing_id in transit_scores:
+            return transit_scores[listing_id][0]
         dist = listing.get("distance_public_transport")
         if dist is not None:
             return max(0.0, 1.0 - float(dist) / _TRANSPORT_THRESH_M)
