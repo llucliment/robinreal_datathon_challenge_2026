@@ -38,15 +38,36 @@ def bootstrap_database(*, db_path: Path, raw_data_dir: Path) -> None:
 
 
 def _apply_migrations(db_path: Path) -> None:
-    """Add new optional columns to an existing DB without rebuilding it."""
+    """Add new optional columns and tables to an existing DB without rebuilding it."""
     with get_connection(db_path) as connection:
-        existing = {
+        existing_cols = {
             row[1] for row in connection.execute("PRAGMA table_info(listings)").fetchall()
         }
-        if "image_description" not in existing:
+        if "image_description" not in existing_cols:
             connection.execute("ALTER TABLE listings ADD COLUMN image_description TEXT")
-            connection.commit()
             logger.info("Migration applied: added image_description column.")
+
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                user_id TEXT PRIMARY KEY,
+                display_name TEXT,
+                created_at TEXT DEFAULT (datetime('now'))
+            )
+        """)
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS user_query_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL REFERENCES users(user_id),
+                query TEXT NOT NULL,
+                soft_facts_json TEXT NOT NULL,
+                hard_facts_json TEXT NOT NULL,
+                created_at TEXT DEFAULT (datetime('now'))
+            )
+        """)
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_uqh_user_id ON user_query_history(user_id, created_at DESC)"
+        )
+        connection.commit()
 
 
 def _csv_paths(raw_data_dir: Path) -> list[Path]:

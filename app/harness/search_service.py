@@ -4,12 +4,14 @@ from pathlib import Path
 from typing import Any
 
 from app.core.hard_filters import HardFilterParams, search_listings
+from app.harness.user_history import get_history, save_query
 from app.harness.user_interactions import log_interaction
-from app.models.schemas import HardFilters, ListingsResponse
+from app.models.schemas import HardFilters, ListingsResponse, SoftCriteria
 from app.participant.hard_fact_extraction import extract_hard_facts
 from app.participant.ranking import rank_listings
 from app.participant.soft_fact_extraction import extract_soft_facts
 from app.participant.soft_filtering import filter_soft_facts
+from app.participant.user_aggregation import merge_with_history
 from app.participant.user_profile import get_or_generate_profile
 
 
@@ -29,18 +31,37 @@ def query_from_text(
     hard_facts.limit = limit
     hard_facts.offset = offset
     soft_facts = extract_soft_facts(query)
+
+    # Blend current preferences with user's historical query preferences
+    if user_id:
+        history = get_history(db_path, user_id)
+        if history:
+            current_criteria = SoftCriteria(**soft_facts)
+            merged = merge_with_history(current_criteria, history)
+            soft_facts = merged.model_dump()
+
     candidates = filter_hard_facts(db_path, hard_facts)
     candidates = filter_soft_facts(candidates, soft_facts)
 
+    # Load LLM-generated user profile for ranking boost
     user_profile: dict[str, Any] | None = None
     if user_id:
         log_interaction(db_path, user_id=user_id, event_type="search", query=query)
         user_profile = get_or_generate_profile(db_path, user_id)
 
-    return ListingsResponse(
+    result = ListingsResponse(
         listings=rank_listings(candidates, soft_facts, user_profile=user_profile),
         meta={"user_id": user_id, "profile_applied": user_profile is not None},
     )
+
+    # Persist query to history after results are computed
+    if user_id:
+        try:
+            save_query(db_path, user_id, query, soft_facts, hard_facts.model_dump())
+        except Exception:
+            pass  # never break search because of history write failure
+
+    return result
 
 
 def query_from_filters(
