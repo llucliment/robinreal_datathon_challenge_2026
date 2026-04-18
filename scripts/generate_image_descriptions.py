@@ -186,6 +186,13 @@ def main() -> None:
         logger.error("DB not found at %s", db_path)
         sys.exit(1)
 
+    with get_connection(db_path) as conn:
+        existing = {row[1] for row in conn.execute("PRAGMA table_info(listings)").fetchall()}
+        if "image_description" not in existing:
+            conn.execute("ALTER TABLE listings ADD COLUMN image_description TEXT")
+            conn.commit()
+            logger.info("Added image_description column to existing DB.")
+
     source_filter = f"AND UPPER(scrape_source) = '{args.source.upper()}'" if args.source != "all" else ""
 
     with get_connection(db_path) as conn:
