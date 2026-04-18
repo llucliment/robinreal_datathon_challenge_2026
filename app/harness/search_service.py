@@ -4,11 +4,13 @@ from pathlib import Path
 from typing import Any
 
 from app.core.hard_filters import HardFilterParams, search_listings
+from app.harness.user_interactions import log_interaction
 from app.models.schemas import HardFilters, ListingsResponse
 from app.participant.hard_fact_extraction import extract_hard_facts
 from app.participant.ranking import rank_listings
 from app.participant.soft_fact_extraction import extract_soft_facts
 from app.participant.soft_filtering import filter_soft_facts
+from app.participant.user_profile import get_or_generate_profile
 
 
 def filter_hard_facts(db_path: Path, hard_facts: HardFilters) -> list[dict[str, Any]]:
@@ -21,6 +23,7 @@ def query_from_text(
     query: str,
     limit: int,
     offset: int,
+    user_id: str | None = None,
 ) -> ListingsResponse:
     hard_facts = extract_hard_facts(query)
     hard_facts.limit = limit
@@ -28,9 +31,15 @@ def query_from_text(
     soft_facts = extract_soft_facts(query)
     candidates = filter_hard_facts(db_path, hard_facts)
     candidates = filter_soft_facts(candidates, soft_facts)
+
+    user_profile: dict[str, Any] | None = None
+    if user_id:
+        log_interaction(db_path, user_id=user_id, event_type="search", query=query)
+        user_profile = get_or_generate_profile(db_path, user_id)
+
     return ListingsResponse(
-        listings=rank_listings(candidates, soft_facts),
-        meta={},
+        listings=rank_listings(candidates, soft_facts, user_profile=user_profile),
+        meta={"user_id": user_id, "profile_applied": user_profile is not None},
     )
 
 

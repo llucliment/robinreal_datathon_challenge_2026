@@ -173,7 +173,7 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--workers", type=int, default=5, help="Parallel workers (default 5)")
     parser.add_argument("--batch-size", type=int, default=50, help="DB commit interval (default 50)")
-    parser.add_argument("--source", choices=["SRED", "COMPARIS", "all"], default="all")
+    parser.add_argument("--source", choices=["SRED", "COMPARIS", "all"], default="SRED")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)-8s %(message)s", datefmt="%H:%M:%S")

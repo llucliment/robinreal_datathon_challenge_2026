@@ -27,6 +27,7 @@ def listings(request: ListingsQueryRequest) -> ListingsResponse:
         query=request.query,
         limit=request.limit,
         offset=request.offset,
+        user_id=request.user_id,
     )
 
 

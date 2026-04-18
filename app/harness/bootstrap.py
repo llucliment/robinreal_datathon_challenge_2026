@@ -6,6 +6,7 @@ from pathlib import Path
 from app.db import get_connection
 from app.harness.csv_import import create_indexes, create_schema, import_csvs
 from app.harness.sred_transform import ensure_sred_normalized_csv
+from app.harness.user_interactions import create_tables as create_interaction_tables
 
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,8 @@ def bootstrap_database(*, db_path: Path, raw_data_dir: Path) -> None:
             )
             return
         _apply_migrations(db_path)
+        with get_connection(db_path) as connection:
+            create_interaction_tables(connection)
         return
 
     csv_paths = _csv_paths(raw_data_dir)
@@ -31,6 +34,7 @@ def bootstrap_database(*, db_path: Path, raw_data_dir: Path) -> None:
         create_schema(connection)
         import_csvs(connection, csv_paths)
         create_indexes(connection)
+        create_interaction_tables(connection)
 
 
 def _apply_migrations(db_path: Path) -> None:

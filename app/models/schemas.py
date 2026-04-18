@@ -28,12 +28,6 @@ class HardFilters(BaseModel):
     sort_by: Literal["price_asc", "price_desc", "rooms_asc", "rooms_desc"] | None = None
 
 
-class ListingsQueryRequest(BaseModel):
-    query: str = Field(min_length=1)
-    limit: int = Field(default=25, ge=1, le=500)
-    offset: int = Field(default=0, ge=0)
-
-
 class ListingsSearchRequest(BaseModel):
     hard_filters: HardFilters | None = None
 
@@ -94,3 +88,38 @@ class SoftCriteria(BaseModel):
     target_landmark: str | None = None
     ideal_description: str = ""
     raw_query: str = ""
+
+
+# ---------------------------------------------------------------------------
+# User interaction & profile models
+# ---------------------------------------------------------------------------
+
+class ListingsQueryRequest(BaseModel):
+    query: str = Field(min_length=1)
+    limit: int = Field(default=25, ge=1, le=500)
+    offset: int = Field(default=0, ge=0)
+    user_id: str | None = None
+
+
+class InteractionEvent(BaseModel):
+    user_id: str
+    listing_id: str
+    event_type: str  # "click" | "favorite" | "hide"
+    query: str | None = None
+    session_id: str | None = None
+
+
+class UserProfile(BaseModel):
+    user_id: str
+    preferred_cities: list[str] = Field(default_factory=list)
+    preferred_cantons: list[str] = Field(default_factory=list)
+    aesthetic_preferences: list[str] = Field(default_factory=list)
+    feature_affinity: list[str] = Field(default_factory=list)
+    negative_patterns: list[str] = Field(default_factory=list)
+    typical_budget_chf: int | None = None
+    min_rooms: float | None = None
+    max_rooms: float | None = None
+    offer_type: str | None = None
+    confidence: float = 0.0
+    summary: str = ""
+    generated_at: str = ""

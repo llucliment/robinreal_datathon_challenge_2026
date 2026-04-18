@@ -30,6 +30,7 @@ def _get_embed_model() -> Any:
 def rank_listings(
     candidates: list[dict[str, Any]],
     soft_facts: dict[str, Any],
+    user_profile: dict[str, Any] | None = None,
 ) -> list[RankedListingResult]:
     if not candidates:
         return []
@@ -45,7 +46,7 @@ def rank_listings(
         if model is not None:
             _add_embedding_scores(candidates, criteria.ideal_description, model)
 
-    scored = [_score(candidate, criteria) for candidate in candidates]
+    scored = [_score(candidate, criteria, user_profile) for candidate in candidates]
     scored.sort(key=lambda x: x[0], reverse=True)
 
     return [
@@ -93,9 +94,59 @@ def _listing_text_for_embed(candidate: dict[str, Any]) -> str:
 # Per-candidate scoring
 # ---------------------------------------------------------------------------
 
+def _profile_multiplier(candidate: dict[str, Any], profile: dict[str, Any]) -> tuple[float, list[str]]:
+    """Return (multiplier, boost_labels) based on user profile affinity."""
+    multiplier = 1.0
+    boosts: list[str] = []
+    confidence = float(profile.get("confidence", 0.0))
+    if confidence < 0.1:
+        return 1.0, []
+
+    # City affinity
+    city = (candidate.get("city") or "").lower()
+    preferred_cities = [c.lower() for c in profile.get("preferred_cities", [])]
+    if city and any(city in pc or pc in city for pc in preferred_cities):
+        multiplier += 0.15 * confidence
+        boosts.append("preferred city")
+
+    # Feature affinity
+    features: list[str] = candidate.get("features") or []
+    feature_affinity: list[str] = profile.get("feature_affinity", [])
+    matched_features = [f for f in feature_affinity if f in features]
+    if matched_features:
+        multiplier += min(0.15, 0.05 * len(matched_features)) * confidence
+        boosts.append(f"features: {', '.join(matched_features[:2])}")
+
+    # Budget affinity
+    price = candidate.get("price")
+    budget = profile.get("typical_budget_chf")
+    if price and budget:
+        ratio = float(price) / float(budget)
+        if 0.7 <= ratio <= 1.1:
+            multiplier += 0.10 * confidence
+            boosts.append("within budget")
+
+    # Aesthetic / soft affinity — boost weights of matching preferences
+    soft_scores: dict[str, float] = candidate.get("soft_scores") or {}
+    aesthetic_prefs: list[str] = profile.get("aesthetic_preferences", [])
+    for label in aesthetic_prefs:
+        if label in soft_scores and soft_scores[label] > 0.5:
+            multiplier += 0.05 * confidence
+
+    # Negative pattern penalty
+    text = f"{candidate.get('title', '')} {candidate.get('description', '')}".lower()
+    neg_hits = sum(1 for p in profile.get("negative_patterns", []) if p.lower() in text)
+    if neg_hits:
+        multiplier -= 0.10 * confidence * neg_hits
+        boosts.append(f"avoids {neg_hits} pattern(s)")
+
+    return max(0.1, multiplier), boosts
+
+
 def _score(
     candidate: dict[str, Any],
     criteria: SoftCriteria,
+    user_profile: dict[str, Any] | None = None,
 ) -> tuple[float, str, dict[str, Any]]:
     soft_scores: dict[str, float] = candidate.get("soft_scores") or {}
     # contributions: (weighted_score, label, raw_score)
@@ -135,7 +186,14 @@ def _score(
     raw_sum = sum(ws for ws, _, _ in contributions)
     score = (raw_sum / total_weight) * (1.0 - penalty)
 
-    reason = _build_reason(contributions, penalty)
+    # Apply user profile multiplier
+    profile_boosts: list[str] = []
+    if user_profile:
+        multiplier, profile_boosts = _profile_multiplier(candidate, user_profile)
+        score *= multiplier
+
+    score = min(1.0, score)
+    reason = _build_reason(contributions, penalty, profile_boosts)
 
     # Clean up internal keys before returning the candidate for ListingData
     candidate.pop("_feature_tags", None)
@@ -147,6 +205,7 @@ def _score(
 def _build_reason(
     contributions: list[tuple[float, str, float]],
     penalty: float,
+    profile_boosts: list[str] | None = None,
 ) -> str:
     if not contributions and penalty == 0.0:
         return "Matched hard filters only."
@@ -187,6 +246,9 @@ def _build_reason(
     if penalty > 0.0:
         pct = int(penalty * 100)
         parts.append(f"−{pct}% avoidance")
+
+    if profile_boosts:
+        parts.append("profile: " + ", ".join(profile_boosts))
 
     return " | ".join(parts) if parts else "Matched hard filters; no strong soft signals."
 

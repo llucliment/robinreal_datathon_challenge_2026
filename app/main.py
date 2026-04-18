@@ -9,6 +9,7 @@ load_dotenv()  # loads .env before any os.getenv() or SDK client is initialised
 from fastapi import FastAPI
 from starlette.staticfiles import StaticFiles
 
+from app.api.routes.interactions import router as interactions_router
 from app.api.routes.listings import router as listings_router
 from app.config import get_settings
 from app.harness.bootstrap import bootstrap_database
@@ -29,6 +30,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.include_router(listings_router)
+app.include_router(interactions_router)
 
 _sred_images_dir = get_settings().raw_data_dir / "sred_images"
 if _sred_images_dir.exists():
