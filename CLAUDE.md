@@ -10,6 +10,12 @@ The competition objective is search quality and ranking effectiveness. Teams imp
 
 ## Commands
 
+**First-time setup — API key:**
+```bash
+cp .env.example .env          # then open .env and paste your ANTHROPIC_API_KEY
+```
+The Anthropic SDK reads `ANTHROPIC_API_KEY` from the environment. Without it the participant modules fall back to rule-based logic but do not crash.
+
 **Install dependencies** (Python, uses `uv`):
 ```bash
 UV_LINK_MODE=copy uv sync --dev

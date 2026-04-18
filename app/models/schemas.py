@@ -72,3 +72,22 @@ class ListingsResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     status: str
+
+
+# ---------------------------------------------------------------------------
+# Soft-fact extraction models (used by soft_fact_extraction and ranking)
+# ---------------------------------------------------------------------------
+
+class WeightedPreference(BaseModel):
+    """A qualitative preference with an importance weight in [0, 1]."""
+    label: str
+    weight: float = Field(ge=0.0, le=1.0)
+
+
+class SoftCriteria(BaseModel):
+    """Structured soft preferences extracted from a natural-language query."""
+    preferences: list[WeightedPreference] = Field(default_factory=list)
+    negative_signals: list[str] = Field(default_factory=list)
+    target_landmark: str | None = None
+    ideal_description: str = ""
+    raw_query: str = ""
