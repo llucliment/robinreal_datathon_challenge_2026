@@ -213,7 +213,7 @@ def _build_reason(
         return "Matched hard filters only."
 
     # Separate user preferences from internal signals
-    internal = {"price value", "semantic match"}
+    internal = {"price value", "semantic match", "proximity to landmark", "transit_minutes_to_landmark"}
     pref_items = [(label, raw) for _, label, raw in contributions if label not in internal]
     price_raw = next((raw for _, label, raw in contributions if label == "price value"), None)
     proximity_raw = next((raw for _, label, raw in contributions if label == "proximity to landmark"), None)
@@ -241,9 +241,9 @@ def _build_reason(
 
     if price_raw is not None:
         if price_raw >= 0.65:
-            parts.append("below-average price")
+            parts.append("great value")
         elif price_raw <= 0.35:
-            parts.append("above-average price")
+            parts.append("pricey")
 
     if penalty > 0.0:
         pct = int(penalty * 100)
