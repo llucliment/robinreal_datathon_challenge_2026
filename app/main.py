@@ -48,3 +48,8 @@ if _sred_images_dir.exists():
         StaticFiles(directory=str(_sred_images_dir)),
         name="raw-data-images",
     )
+
+from pathlib import Path
+_frontend_dir = Path(__file__).parent.parent / "apps_sdk" / "web" / "dist"
+if _frontend_dir.exists():
+    app.mount("/", StaticFiles(directory=str(_frontend_dir), html=True), name="frontend")
