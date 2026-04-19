@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from fastapi import APIRouter
 
 from app.config import get_settings
@@ -17,6 +19,16 @@ router = APIRouter()
 @router.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     return HealthResponse(status="ok")
+
+
+@router.get("/health/detailed")
+def health_detailed() -> dict:
+    key = os.getenv("ANTHROPIC_API_KEY", "")
+    return {
+        "status": "ok",
+        "anthropic_key_set": bool(key),
+        "anthropic_key_prefix": key[:12] + "..." if key else "(not set)",
+    }
 
 
 @router.post("/listings", response_model=ListingsResponse)

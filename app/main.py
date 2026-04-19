@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()  # loads .env before any os.getenv() or SDK client is initialised
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
 
 from app.api.routes.interactions import router as interactions_router
@@ -29,6 +30,14 @@ app = FastAPI(
     title="Datathon 2026 Listings Harness",
     lifespan=lifespan,
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
+
 app.include_router(listings_router)
 app.include_router(interactions_router)
 

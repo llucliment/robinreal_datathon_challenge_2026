@@ -3,4 +3,5 @@
 .venv
 __pycache__
 *.pyc
-data/
+data/*
+!data/listings.db

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from app.models.schemas import SoftCriteria, WeightedPreference
+
+logger = logging.getLogger(__name__)
 
 # Weight hints communicated to the model:
 # 1.0  — "must", "need", "require", "essential"
@@ -16,7 +19,8 @@ def extract_soft_facts(query: str) -> dict[str, Any]:
         return SoftCriteria(raw_query=query).model_dump()
     try:
         return _extract_with_llm(query)
-    except Exception:
+    except Exception as exc:
+        logger.warning("soft_fact_extraction LLM call failed: %s", exc)
         return SoftCriteria(raw_query=query).model_dump()
 
 

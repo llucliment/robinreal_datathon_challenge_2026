@@ -19,6 +19,9 @@ def filter_hard_facts(db_path: Path, hard_facts: HardFilters) -> list[dict[str, 
     return search_listings(db_path, to_hard_filter_params(hard_facts))
 
 
+_POOL_SIZE = 200  # Fetch a large pool so price stats are representative of the filtered market
+
+
 def query_from_text(
     *,
     db_path: Path,
@@ -28,8 +31,11 @@ def query_from_text(
     user_id: str | None = None,
 ) -> ListingsResponse:
     hard_facts = extract_hard_facts(query)
-    hard_facts.limit = limit
-    hard_facts.offset = offset
+    # Fetch a larger pool so that price statistics reflect the real market for
+    # these hard-filter constraints (e.g. "cheap 3-room apartment" compares
+    # against all 3-room apartments, not just the first 20 returned).
+    hard_facts.limit = max(limit + offset, _POOL_SIZE)
+    hard_facts.offset = 0
     soft_facts = extract_soft_facts(query)
 
     # Blend current preferences with user's historical query preferences
@@ -49,8 +55,9 @@ def query_from_text(
         log_interaction(db_path, user_id=user_id, event_type="search", query=query)
         user_profile = get_or_generate_profile(db_path, user_id)
 
+    ranked = rank_listings(candidates, soft_facts, user_profile=user_profile)
     result = ListingsResponse(
-        listings=rank_listings(candidates, soft_facts, user_profile=user_profile),
+        listings=ranked[offset : offset + limit],
         meta={"user_id": user_id, "profile_applied": user_profile is not None},
     )
 
@@ -70,11 +77,17 @@ def query_from_filters(
     hard_facts: HardFilters | None,
 ) -> ListingsResponse:
     structured_hard_facts = hard_facts or HardFilters()
+    limit = structured_hard_facts.limit
+    offset = structured_hard_facts.offset
+    # Expand pool for representative price stats
+    structured_hard_facts.limit = max(limit + offset, _POOL_SIZE)
+    structured_hard_facts.offset = 0
     soft_facts = extract_soft_facts("")
     candidates = filter_hard_facts(db_path, structured_hard_facts)
     candidates = filter_soft_facts(candidates, soft_facts)
+    ranked = rank_listings(candidates, soft_facts)
     return ListingsResponse(
-        listings=rank_listings(candidates, soft_facts),
+        listings=ranked[offset : offset + limit],
         meta={},
     )
 
