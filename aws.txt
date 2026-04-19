@@ -1,0 +1,145 @@
+═══════════════════════════════════════════════════════════════════════
+  HOW WE USED AWS — RobinReal · Zurich Datathon 2026
+═══════════════════════════════════════════════════════════════════════
+
+One AWS service. Used well.
+
+We didn't need a microservices constellation or a managed ML pipeline.
+We needed one thing: reliable, fast access to tens of thousands of
+property images stored in object storage. Amazon S3 delivered exactly
+that — and became the foundation for one of our biggest differentiators.
+
+
+───────────────────────────────────────────────────────────────────────
+  THE SETUP — S3 AS THE IMAGE BACKBONE
+───────────────────────────────────────────────────────────────────────
+
+Bucket : crawl-data-951752554117-eu-central-2-an
+Region : eu-central-2 (Zurich)
+Prefix : prod/
+
+Every listing image in the dataset lives in this bucket, organised by
+source and platform ID:
+
+  prod/{source}/images/platform_id={platform_id}/{filename}
+
+  Examples:
+    prod/comparis/images/platform_id=36270868/0-main.jpg
+    prod/robinreal/images/platform_id=695fb966.../0-facade.png
+
+The region choice — eu-central-2 (AWS Zurich) — was deliberate. The
+dataset is Swiss real estate. The data never leaves Switzerland.
+
+
+───────────────────────────────────────────────────────────────────────
+  HOW WE ACCESS IT — BOTO3 + VIRTUAL-HOSTED URLS
+───────────────────────────────────────────────────────────────────────
+
+We use boto3 in app/core/s3.py to resolve listing images on demand.
+The flow for any non-SRED listing:
+
+  1. Look up the listing's platform_id and scrape_source from SQLite
+
+  2. Build a prefix:
+       prod/{source}/images/platform_id={platform_id}/
+
+  3. Call client.list_objects_v2() to discover every image file
+     under that prefix — sorted by key so images appear in a
+     consistent order regardless of upload time
+
+  4. Filter to known image extensions: .jpg, .jpeg, .png, .webp
+
+  5. Construct a virtual-hosted-style URL for each:
+       https://{bucket}.s3.{region}.amazonaws.com/{encoded_key}
+     Keys are URL-encoded (urllib.parse.quote) to handle special
+     characters in filenames safely
+
+These URLs are returned directly to the frontend — the browser fetches
+images straight from S3, keeping our FastAPI server lean.
+
+
+───────────────────────────────────────────────────────────────────────
+  THE BIG USE CASE — FEEDING 22,000 IMAGES TO HAIKU VISION
+───────────────────────────────────────────────────────────────────────
+
+This is where S3 went from infrastructure to competitive advantage.
+
+Our image description pipeline (scripts/generate_image_descriptions.py
+and scripts/generate_robinreal_descriptions.py) fetches images directly
+from S3 via their HTTPS URLs using httpx, base64-encodes them in memory,
+and sends them to Claude Haiku Vision — all without downloading a single
+file to disk.
+
+The pipeline ran across three machines in parallel, each targeting a
+different source:
+
+  Machine A → prod/sred/...       (11,105 montage images, local files)
+  Machine B → prod/comparis/...   (10,917 single-view images, via S3)
+  Machine C → prod/robinreal/...  (   797 single-view images, via S3)
+
+For COMPARIS and ROBINREAL, every worker thread streamed the image
+directly from S3 over HTTPS — no local storage, no intermediate step.
+Eight workers per machine meant eight simultaneous S3 fetches feeding
+eight simultaneous Haiku Vision calls.
+
+S3's combination of low-latency access from the Zurich region and
+no throttling on parallel GETs made this architecture possible.
+Sequential fetching would have taken hours. With S3 + parallel workers,
+we processed 22,000+ images in under 4 minutes per source.
+
+
+───────────────────────────────────────────────────────────────────────
+  SRED — THE EXCEPTION THAT PROVES THE RULE
+───────────────────────────────────────────────────────────────────────
+
+SRED listings use a different image format: pre-rendered 2×2 montage
+files stored locally in raw_data/sred_images/ rather than in S3.
+
+Our s3.py detects the source and skips the bucket lookup entirely for
+SRED — instead extracting image URLs from the images_json column and
+reading from disk. This dual-path design meant the rest of the pipeline
+(Haiku Vision description, ranking, frontend display) remained identical
+regardless of where the image lived.
+
+One interface. Two storage backends. Zero special cases in application
+code above the s3 module.
+
+
+───────────────────────────────────────────────────────────────────────
+  CONFIGURATION — TWELVE-FACTOR CLEAN
+───────────────────────────────────────────────────────────────────────
+
+All AWS configuration is externalised via environment variables:
+
+  AWS_ACCESS_KEY_ID        — credentials (never committed)
+  AWS_SECRET_ACCESS_KEY    — credentials (never committed)
+  LISTINGS_S3_BUCKET       — bucket name
+  LISTINGS_S3_REGION       — eu-central-2
+  LISTINGS_S3_PREFIX       — prod
+
+The .gitignore excludes .env unconditionally. Credentials never touched
+the repository. The Docker image reads them from the host environment at
+runtime — standard twelve-factor practice.
+
+
+───────────────────────────────────────────────────────────────────────
+  WHY JUST S3
+───────────────────────────────────────────────────────────────────────
+
+We considered more. CloudFront for a CDN layer. Lambda for async
+description generation. RDS instead of SQLite.
+
+We chose none of them — because the constraint of the datathon is
+search quality, not cloud architecture. Every hour spent on
+infrastructure is an hour not spent on ranking logic.
+
+S3 gave us what we needed: durable, fast, parallel-friendly object
+storage in the same region as our data. We used it precisely where it
+added value — image storage and retrieval — and nothing else.
+
+Sometimes the right architecture is the minimal one.
+
+
+───────────────────────────────────────────────────────────────────────
+  RobinReal Team · Zurich Datathon 2026
+───────────────────────────────────────────────────────────────────────
