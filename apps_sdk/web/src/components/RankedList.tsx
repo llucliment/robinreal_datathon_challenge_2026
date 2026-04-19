@@ -7,6 +7,7 @@ type RankedListProps = {
   results: RankedListingResult[];
   selectedId: string | null;
   onSelect: (listingId: string) => void;
+  onOpenDetail: (listingId: string) => void;
   onInteract?: (listingId: string, eventType: "image_browse") => void;
 };
 
@@ -46,7 +47,7 @@ function getImageUrls(listing: RankedListingResult["listing"]): string[] {
   return Array.from(new Set(candidates));
 }
 
-export default function RankedList({ results, selectedId, onSelect, onInteract }: RankedListProps) {
+export default function RankedList({ results, selectedId, onSelect, onOpenDetail, onInteract }: RankedListProps) {
   const [imageIndexes, setImageIndexes] = useState<Record<string, number>>({});
   const touchStartXRef = useRef<Record<string, number>>({});
   const cardRefs = useRef<Record<string, HTMLElement | null>>({});
@@ -96,11 +97,11 @@ export default function RankedList({ results, selectedId, onSelect, onInteract }
             key={result.listing_id}
             ref={(el) => { cardRefs.current[result.listing_id] = el; }}
             className={`listing-card ${selectedId === result.listing_id ? "selected" : ""}`}
-            onClick={() => onSelect(result.listing_id)}
+            onClick={() => onOpenDetail(result.listing_id)}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                onSelect(result.listing_id);
+                onOpenDetail(result.listing_id);
               }
             }}
             role="button"

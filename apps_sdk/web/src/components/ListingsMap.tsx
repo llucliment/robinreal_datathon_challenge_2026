@@ -8,6 +8,7 @@ type ListingsMapProps = {
   selectedId: string | null;
   selectedListing: RankedListingResult | null;
   onSelect: (listingId: string) => void;
+  onOpenDetail: (listingId: string) => void;
 };
 
 const MAP_STYLE: maplibregl.StyleSpecification = {
@@ -57,6 +58,7 @@ export default function ListingsMap({
   selectedId,
   selectedListing,
   onSelect,
+  onOpenDetail,
 }: ListingsMapProps) {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
@@ -111,7 +113,7 @@ export default function ListingsMap({
       el.type = "button";
       el.className = `map-pin ${selectedId === result.listing_id ? "selected" : ""}`;
       el.textContent = formatPinPrice(result.listing.price_chf);
-      el.onclick = () => onSelect(result.listing_id);
+      el.onclick = () => onOpenDetail(result.listing_id);
 
       const marker = new maplibregl.Marker({ element: el })
         .setLngLat([result.listing.longitude!, result.listing.latitude!])

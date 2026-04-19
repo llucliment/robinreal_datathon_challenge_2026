@@ -1,9 +1,18 @@
-type Segment = {
+export type Segment = {
   type: "positive" | "moderate" | "negative" | "price" | "transit" | "info";
   text: string;
 };
 
-function parseReason(reason: string): Segment[] {
+export const ICONS: Record<Segment["type"], string> = {
+  positive: "↑",
+  moderate: "→",
+  negative: "↓",
+  price: "CHF",
+  transit: "⏱",
+  info: "·",
+};
+
+export function parseReason(reason: string): Segment[] {
   return reason
     .split(" | ")
     .map((part) => part.trim())
@@ -17,15 +26,6 @@ function parseReason(reason: string): Segment[] {
       return { type: "info", text: part };
     });
 }
-
-const ICONS: Record<Segment["type"], string> = {
-  positive: "↑",
-  moderate: "→",
-  negative: "↓",
-  price: "CHF",
-  transit: "⏱",
-  info: "·",
-};
 
 export default function ReasonDisplay({ reason }: { reason: string }) {
   if (!reason) return null;

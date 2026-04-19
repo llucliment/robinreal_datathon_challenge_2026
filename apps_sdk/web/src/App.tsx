@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import ListingDetail from "./components/ListingDetail";
 import ListingsMap from "./components/ListingsMap";
 import QueryBar from "./components/QueryBar";
 import RankedList from "./components/RankedList";
@@ -60,6 +61,9 @@ export default function App() {
   // Selected listing for map highlight
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  // Detail overlay state
+  const [detailId, setDetailId] = useState<string | null>(null);
+
   // Dwell-time tracking
   const dwellRef = useRef<{ id: string; startedAt: number } | null>(null);
 
@@ -106,13 +110,17 @@ export default function App() {
     [results, selectedId],
   );
 
+  const detailResult = useMemo(
+    () => (detailId ? (results.find((r) => r.listing_id === detailId) ?? null) : null),
+    [results, detailId],
+  );
+
   // -------------------------------------------------------------------------
   // Interaction handlers
   // -------------------------------------------------------------------------
   const handleSelect = (listingId: string) => {
     const now = Date.now();
 
-    // Fire "view" for the previous selection if the user spent enough time
     if (dwellRef.current && dwellRef.current.id !== listingId) {
       const elapsed = now - dwellRef.current.startedAt;
       if (elapsed >= DWELL_THRESHOLD_MS) {
@@ -124,6 +132,13 @@ export default function App() {
     setSelectedId(listingId);
     logInteraction(userId, listingId, "click", lastQuery);
   };
+
+  const handleOpenDetail = (listingId: string) => {
+    handleSelect(listingId);
+    setDetailId(listingId);
+  };
+
+  const handleCloseDetail = () => setDetailId(null);
 
   const handleInteract = (listingId: string, eventType: "image_browse") => {
     logInteraction(userId, listingId, eventType, lastQuery);
@@ -147,32 +162,40 @@ export default function App() {
   // Render
   // -------------------------------------------------------------------------
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="sidebar-brand">
-          <span className="sidebar-brand-name">RobinReal</span>
-          {results.length > 0 && (
-            <span className="sidebar-count">{results.length} results</span>
-          )}
-        </div>
-        {error && <p className="search-error">{error}</p>}
-        <RankedList
-          results={results}
-          selectedId={selectedId}
-          onSelect={handleSelect}
-          onInteract={handleInteract}
-        />
-      </aside>
+    <>
+      <div className="app-shell">
+        <aside className="sidebar">
+          <div className="sidebar-brand">
+            <span className="sidebar-brand-name">RobinReal</span>
+            {results.length > 0 && (
+              <span className="sidebar-count">{results.length} results</span>
+            )}
+          </div>
+          {error && <p className="search-error">{error}</p>}
+          <RankedList
+            results={results}
+            selectedId={selectedId}
+            onSelect={handleSelect}
+            onOpenDetail={handleOpenDetail}
+            onInteract={handleInteract}
+          />
+        </aside>
 
-      <main className="map-panel">
-        <ListingsMap
-          results={results}
-          selectedId={selectedId}
-          selectedListing={selectedListing}
-          onSelect={handleSelect}
-        />
-        <QueryBar onSearch={handleSearch} loading={loading} />
-      </main>
-    </div>
+        <main className="map-panel">
+          <ListingsMap
+            results={results}
+            selectedId={selectedId}
+            selectedListing={selectedListing}
+            onSelect={handleSelect}
+            onOpenDetail={handleOpenDetail}
+          />
+          <QueryBar onSearch={handleSearch} loading={loading} />
+        </main>
+      </div>
+
+      {detailResult && (
+        <ListingDetail result={detailResult} onClose={handleCloseDetail} />
+      )}
+    </>
   );
 }
