@@ -1,34 +1,15 @@
 import { useRef, useState } from "react";
-
-type ListingData = {
-  id: string;
-  title: string;
-  city?: string | null;
-  canton?: string | null;
-  image_urls?: string[] | null;
-  hero_image_url?: string | null;
-  price_chf?: number | null;
-  rooms?: number | null;
-  features?: string[];
-};
-
-type RankedListingResult = {
-  listing_id: string;
-  score: number;
-  reason: string;
-  listing: ListingData;
-};
+import type { RankedListingResult } from "../utils/api";
 
 type RankedListProps = {
   results: RankedListingResult[];
   selectedId: string | null;
   onSelect: (listingId: string) => void;
+  onInteract?: (listingId: string, eventType: "image_browse") => void;
 };
 
 function formatPrice(price?: number | null): string {
-  if (price == null) {
-    return "Price n/a";
-  }
+  if (price == null) return "Price n/a";
   return new Intl.NumberFormat("de-CH", {
     style: "currency",
     currency: "CHF",
@@ -36,26 +17,22 @@ function formatPrice(price?: number | null): string {
   }).format(price);
 }
 
-function getImageUrls(listing: ListingData): string[] {
+function getImageUrls(listing: RankedListingResult["listing"]): string[] {
   const candidates = [listing.hero_image_url, ...(listing.image_urls ?? [])].filter(
-    (value): value is string => Boolean(value),
+    (v): v is string => Boolean(v),
   );
   return Array.from(new Set(candidates));
 }
 
-export default function RankedList({
-  results,
-  selectedId,
-  onSelect,
-}: RankedListProps) {
+export default function RankedList({ results, selectedId, onSelect, onInteract }: RankedListProps) {
   const [imageIndexes, setImageIndexes] = useState<Record<string, number>>({});
   const touchStartXRef = useRef<Record<string, number>>({});
 
   if (!results.length) {
     return (
       <div className="empty-state">
-        <p>No widget data yet.</p>
-        <p className="muted">Run the `search_listings` tool to render the map and list.</p>
+        <p>No results yet.</p>
+        <p className="muted">Type a query below and press Search.</p>
       </div>
     );
   }
@@ -66,19 +43,18 @@ export default function RankedList({
         const listing = result.listing;
         const features = (listing.features ?? []).slice(0, 4);
         const imageUrls = getImageUrls(listing);
-        const activeImageIndex = imageIndexes[result.listing_id] ?? 0;
+        const activeIndex = imageIndexes[result.listing_id] ?? 0;
         const activeImageUrl =
-          imageUrls[(activeImageIndex + imageUrls.length) % Math.max(imageUrls.length, 1)];
+          imageUrls[(activeIndex + imageUrls.length) % Math.max(imageUrls.length, 1)];
 
         const advanceImage = (delta: number) => {
           onSelect(result.listing_id);
-          if (imageUrls.length <= 1) {
-            return;
-          }
+          if (imageUrls.length <= 1) return;
+          onInteract?.(result.listing_id, "image_browse");
           setImageIndexes((current) => {
-            const currentIndex = current[result.listing_id] ?? 0;
-            const nextIndex = (currentIndex + delta + imageUrls.length) % imageUrls.length;
-            return { ...current, [result.listing_id]: nextIndex };
+            const current_ = current[result.listing_id] ?? 0;
+            const next = (current_ + delta + imageUrls.length) % imageUrls.length;
+            return { ...current, [result.listing_id]: next };
           });
         };
 
@@ -87,9 +63,9 @@ export default function RankedList({
             key={result.listing_id}
             className={`listing-card ${selectedId === result.listing_id ? "selected" : ""}`}
             onClick={() => onSelect(result.listing_id)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
                 onSelect(result.listing_id);
               }
             }}
@@ -98,49 +74,39 @@ export default function RankedList({
           >
             {activeImageUrl ? (
               <div className="listing-image-wrap">
-                {imageUrls.length > 1 ? (
+                {imageUrls.length > 1 && (
                   <>
                     <button
-                      aria-label="Show previous image"
+                      aria-label="Previous image"
                       className="listing-image-button listing-image-button-prev"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        advanceImage(-1);
-                      }}
+                      onClick={(e) => { e.stopPropagation(); advanceImage(-1); }}
                       type="button"
                     >
                       ‹
                     </button>
                     <button
-                      aria-label="Show next image"
+                      aria-label="Next image"
                       className="listing-image-button listing-image-button-next"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        advanceImage(1);
-                      }}
+                      onClick={(e) => { e.stopPropagation(); advanceImage(1); }}
                       type="button"
                     >
                       ›
                     </button>
                     <div className="listing-image-count">
-                      {activeImageIndex + 1}/{imageUrls.length}
+                      {activeIndex + 1}/{imageUrls.length}
                     </div>
                   </>
-                ) : null}
+                )}
                 <img
                   className="listing-image"
                   src={activeImageUrl}
                   alt={listing.title}
                   loading="lazy"
-                  onTouchEnd={(event) => {
+                  onTouchEnd={(e) => {
                     const startX = touchStartXRef.current[result.listing_id];
-                    if (startX == null) {
-                      return;
-                    }
-                    const endX = event.changedTouches[0]?.clientX;
-                    if (typeof endX !== "number") {
-                      return;
-                    }
+                    if (startX == null) return;
+                    const endX = e.changedTouches[0]?.clientX;
+                    if (typeof endX !== "number") return;
                     const deltaX = endX - startX;
                     if (Math.abs(deltaX) < 36) {
                       onSelect(result.listing_id);
@@ -148,15 +114,14 @@ export default function RankedList({
                     }
                     advanceImage(deltaX < 0 ? 1 : -1);
                   }}
-                  onTouchStart={(event) => {
-                    const touch = event.touches[0];
-                    if (touch) {
-                      touchStartXRef.current[result.listing_id] = touch.clientX;
-                    }
+                  onTouchStart={(e) => {
+                    const touch = e.touches[0];
+                    if (touch) touchStartXRef.current[result.listing_id] = touch.clientX;
                   }}
                 />
               </div>
             ) : null}
+
             <div className="listing-card-header">
               <span className="listing-rank">#{index + 1}</span>
               <span className="listing-score">{result.score.toFixed(2)}</span>
@@ -169,11 +134,11 @@ export default function RankedList({
               {formatPrice(listing.price_chf)} · {listing.rooms ?? "?"} rooms
             </p>
             <p className="listing-reason">{result.reason}</p>
-            {!!features.length && (
+            {features.length > 0 && (
               <div className="feature-row">
-                {features.map((feature) => (
-                  <span key={feature} className="feature-badge">
-                    {feature.replaceAll("_", " ")}
+                {features.map((f) => (
+                  <span key={f} className="feature-badge">
+                    {f.replaceAll("_", " ")}
                   </span>
                 ))}
               </div>

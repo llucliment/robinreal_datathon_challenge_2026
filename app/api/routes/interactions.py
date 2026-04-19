@@ -13,8 +13,11 @@ router = APIRouter(prefix="/users", tags=["users"])
 @router.post("/{user_id}/interactions", status_code=204)
 def record_interaction(user_id: str, event: InteractionEvent) -> None:
     """Log a click, favorite or hide event for a listing."""
-    if event.event_type not in {"click", "favorite", "hide"}:
-        raise HTTPException(status_code=422, detail="event_type must be click, favorite or hide")
+    if event.event_type not in {"click", "favorite", "hide", "view", "image_browse"}:
+        raise HTTPException(
+            status_code=422,
+            detail="event_type must be click, favorite, hide, view, or image_browse",
+        )
     settings = get_settings()
     log_interaction(
         settings.db_path,
