@@ -9,6 +9,7 @@ __pycache__/
 
 data/*
 !data/image_descriptions.csv
+!data/robinreal_image_descriptions.csv
 *.db
 *.sqlite
 *.sqlite3
