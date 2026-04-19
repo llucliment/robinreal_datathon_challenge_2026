@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RobinReal — Datathon 2026 Technical Overview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --robin: #1f5f8b;
+    --robin-light: #e8f0f6;
+    --robin-mid: #174d73;
+    --accent: #cf5c36;
+    --text: #142233;
+    --muted: #5a7385;
+    --border: #d6e2ec;
+    --card: #ffffff;
+    --bg: #eef3f7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; font-size: 15px; }
+
+  /* COVER */
+  .cover {
+    background: linear-gradient(135deg, #0a1927 0%, #142233 40%, #1f5f8b 100%);
+    color: white;
+    padding: 80px 60px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    page-break-after: always;
+  }
+  .cover-badge { font-size: 13px; text-transform: uppercase; letter-spacing: 3px; opacity: 0.7; margin-bottom: 20px; }
+  .cover h1 { font-size: 72px; font-weight: 800; letter-spacing: -2px; line-height: 1; margin-bottom: 8px; }
+  .cover h1 span { color: #cf5c36; }
+  .cover-subtitle { font-size: 22px; opacity: 0.85; margin-bottom: 48px; font-weight: 300; }
+  .cover-tagline { font-size: 18px; opacity: 0.9; max-width: 560px; font-style: italic; border-left: 3px solid #cf5c36; padding-left: 20px; margin-bottom: 60px; }
+  .cover-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; max-width: 700px; }
+  .cover-stat { }
+  .cover-stat-num { font-size: 36px; font-weight: 800; color: #7ab8d9; }
+  .cover-stat-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7; }
+  .cover-footer { margin-top: auto; padding-top: 60px; font-size: 13px; opacity: 0.5; }
+
+  /* LAYOUT */
+  .page { padding: 60px; max-width: 1100px; margin: 0 auto; }
+  .section { margin-bottom: 64px; }
+  h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 3px; color: var(--robin); font-weight: 700; margin-bottom: 12px; }
+  h3 { font-size: 26px; font-weight: 800; color: var(--text); margin-bottom: 24px; line-height: 1.2; }
+  h4 { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+  p { color: var(--muted); margin-bottom: 12px; }
+
+  /* PIPELINE FLOW */
+  .pipeline { display: flex; gap: 0; margin: 32px 0; }
+  .pipe-step { flex: 1; background: var(--card); border: 1px solid var(--border); border-right: none; padding: 20px 16px; position: relative; }
+  .pipe-step:first-child { border-radius: 10px 0 0 10px; }
+  .pipe-step:last-child { border-right: 1px solid var(--border); border-radius: 0 10px 10px 0; }
+  .pipe-step::after { content: '→'; position: absolute; right: -10px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--robin); font-weight: 700; z-index: 2; background: var(--bg); padding: 0 2px; }
+  .pipe-step:last-child::after { display: none; }
+  .pipe-num { width: 28px; height: 28px; border-radius: 50%; background: var(--robin); color: white; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+  .pipe-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .pipe-file { font-size: 10px; color: var(--robin); font-family: monospace; background: var(--robin-light); padding: 2px 6px; border-radius: 3px; margin-bottom: 8px; display: inline-block; }
+  .pipe-desc { font-size: 12px; color: var(--muted); }
+
+  /* CARDS GRID */
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 24px 0; }
+  .cards.two { grid-template-columns: repeat(2, 1fr); }
+  .cards.four { grid-template-columns: repeat(4, 1fr); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 24px; }
+  .card-icon { font-size: 28px; margin-bottom: 12px; }
+  .card h4 { margin-bottom: 6px; }
+  .card ul { list-style: none; padding: 0; }
+  .card ul li { font-size: 13px; color: var(--muted); padding: 3px 0; padding-left: 14px; position: relative; }
+  .card ul li::before { content: '·'; position: absolute; left: 0; color: var(--robin); font-weight: 700; }
+
+  /* HIGHLIGHT CARD */
+  .card.highlight { background: var(--robin-light); border-color: var(--robin-mid); }
+  .card.highlight h4 { color: var(--robin); }
+  .card.accent { background: #fdf0eb; border-color: #f0c4ad; }
+  .card.accent h4 { color: var(--accent); }
+
+  /* TAG LISTS */
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+  .tag { font-size: 12px; padding: 4px 12px; border-radius: 20px; font-weight: 600; }
+  .tag.green { background: var(--robin-light); color: var(--robin); }
+  .tag.orange { background: #fdf0eb; color: var(--accent); }
+  .tag.blue { background: #dbeeff; color: #1a4c7a; }
+  .tag.gray { background: #f0f4f8; color: #374151; }
+
+  /* FORMULA BOX */
+  .formula { background: #0f172a; color: #e2e8f0; border-radius: 10px; padding: 28px 32px; font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; line-height: 2; margin: 24px 0; }
+  .formula .c1 { color: #6ee7a0; }
+  .formula .c2 { color: #93c5fd; }
+  .formula .c3 { color: #fbbf24; }
+  .formula .comment { color: #64748b; }
+
+  /* TWO COLUMN */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; margin: 24px 0; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin: 24px 0; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 20px 0; }
+  th { background: var(--robin); color: white; padding: 10px 14px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: #fafafa; }
+  td strong { color: var(--text); }
+
+  /* STAT BOXES */
+  .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin: 24px 0; }
+  .stat { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px 16px; text-align: center; }
+  .stat-num { font-size: 32px; font-weight: 800; color: var(--robin); }
+  .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-top: 4px; }
+
+  /* DIVIDER */
+  hr { border: none; border-top: 1px solid var(--border); margin: 48px 0; }
+
+  /* SECTION HEADER */
+  .sec-header { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 2px solid var(--robin-light); }
+  .sec-num { font-size: 48px; font-weight: 900; color: #b8cfdf; line-height: 1; }
+  .sec-title { }
+
+  /* PRINT */
+  @media print {
+    body { background: white; }
+    .cover { page-break-after: always; }
+    .section { page-break-inside: avoid; }
+    .page { padding: 40px; }
+  }
+
+  /* BADGE */
+  .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 6px; }
+  .badge.llm { background: #fef3c7; color: #92400e; }
+  .badge.embed { background: #dbeeff; color: #1a4c7a; }
+  .badge.api { background: #e8f0f6; color: #1f5f8b; }
+  .badge.rule { background: #f0f4f8; color: #374151; }
+  .badge.ui { background: #fce8de; color: #8b3010; }
+
+  /* FLOW */
+  .flow { display: flex; flex-direction: column; gap: 0; }
+  .flow-item { display: flex; gap: 24px; position: relative; }
+  .flow-item:not(:last-child)::after { content: ''; position: absolute; left: 19px; top: 44px; bottom: 0; width: 2px; background: var(--border); }
+  .flow-dot { width: 40px; height: 40px; border-radius: 50%; background: var(--robin); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; z-index: 1; }
+  .flow-content { flex: 1; padding-bottom: 32px; }
+  .flow-content h4 { font-size: 16px; margin-bottom: 4px; }
+  .flow-content p { font-size: 13px; }
+
+  /* FEATURE ROW */
+  .feature-row { display: flex; align-items: flex-start; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border); }
+  .feature-row:last-child { border-bottom: none; }
+  .feature-icon { font-size: 24px; width: 40px; text-align: center; flex-shrink: 0; }
+  .feature-text h4 { font-size: 14px; margin-bottom: 2px; }
+  .feature-text p { font-size: 13px; margin: 0; }
+
+  /* SCREEN */
+  .screen { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 16px 0; }
+  .screen-bar { display: flex; gap: 6px; margin-bottom: 16px; }
+  .screen-dot { width: 10px; height: 10px; border-radius: 50%; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ COVER ═══════════════════════════════ -->
+<div class="cover">
+  <div class="cover-badge">Zurich Datathon 2026</div>
+  <h1>Robin<span>Real</span></h1>
+  <div class="cover-subtitle">AI-powered Swiss Real Estate Search &amp; Ranking</div>
+  <div class="cover-tagline">
+    "Describe exactly what you need — in plain language.<br>
+    Our AI reads your intent and ranks thousands of Swiss listings for you."
+  </div>
+  <div class="cover-stats">
+    <div class="cover-stat">
+      <div class="cover-stat-num">5</div>
+      <div class="cover-stat-label">Pipeline Stages</div>
+    </div>
+    <div class="cover-stat">
+      <div class="cover-stat-num">3</div>
+      <div class="cover-stat-label">Languages</div>
+    </div>
+    <div class="cover-stat">
+      <div class="cover-stat-num">18</div>
+      <div class="cover-stat-label">Soft Preferences</div>
+    </div>
+    <div class="cover-stat">
+      <div class="cover-stat-num">189</div>
+      <div class="cover-stat-label">City Variants</div>
+    </div>
+  </div>
+  <div class="cover-footer">RobinReal Team · Zurich Datathon 2026</div>
+</div>
+
+<!-- ═══════════════════════════════ PAGE 1 ═══════════════════════════════ -->
+<div class="page">
+
+  <!-- WHAT IS IT -->
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-num">01</div>
+      <div class="sec-title">
+        <h2>Overview</h2>
+        <h3>What is RobinReal?</h3>
+      </div>
+    </div>
+    <div class="two-col">
+      <div>
+        <p>RobinReal is a <strong>natural language real estate search engine</strong> for the Swiss market. Instead of clicking through filters, users describe what they want in plain text — in English, German, or French — and the system finds and ranks the best matching listings.</p>
+        <p>The system combines <strong>Large Language Models</strong> for intent extraction, <strong>semantic embeddings</strong> for relevance scoring, <strong>real-time Swiss public transport data</strong> for proximity ranking, and a <strong>user profile engine</strong> that personalizes results based on past searches.</p>
+        <p>The result is a search experience that understands nuance: "bright flat near ETH Zürich for a young professional, max CHF 2'200" is understood as well as a human agent would understand it.</p>
+      </div>
+      <div>
+        <div class="card highlight">
+          <div class="card-icon">🎯</div>
+          <h4>Competition Objective</h4>
+          <p style="font-size:13px; color:#166534;">Search quality and ranking effectiveness across a SQLite database of Swiss property listings, given a natural-language query.</p>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <div class="card-icon">⚡</div>
+          <h4>Key Differentiators</h4>
+          <ul>
+            <li>LLM extraction with instant rule-based fallback</li>
+            <li>Real Swiss transit API for commute ranking</li>
+            <li>Multilingual (EN / DE / FR)</li>
+            <li>Semantic embedding similarity</li>
+            <li>Personalization via user profiles</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIPELINE OVERVIEW -->
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-num">02</div>
+      <div class="sec-title">
+        <h2>Architecture</h2>
+        <h3>The 5-Stage Search Pipeline</h3>
+      </div>
+    </div>
+    <p style="margin-bottom:24px;">Every query flows through five sequential stages. Each stage is independently robust — if an AI component fails, the system degrades gracefully to rule-based logic without crashing.</p>
+    <div class="pipeline">
+      <div class="pipe-step">
+        <div class="pipe-num">1</div>
+        <div class="pipe-title">Hard Fact Extraction</div>
+        <div class="pipe-file">hard_fact_extraction.py</div>
+        <div class="pipe-desc">LLM parses strict constraints: city, price, rooms, features, dates</div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-num">2</div>
+        <div class="pipe-title">Hard Filtering</div>
+        <div class="pipe-file">hard_filters.py</div>
+        <div class="pipe-desc">SQL WHERE clauses against SQLite; retrieves 200+ candidate pool</div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-num">3</div>
+        <div class="pipe-title">Soft Extraction</div>
+        <div class="pipe-file">soft_fact_extraction.py</div>
+        <div class="pipe-desc">LLM extracts preferences, weights, negative signals &amp; commute target</div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-num">4</div>
+        <div class="pipe-title">Soft Scoring</div>
+        <div class="pipe-file">soft_filtering.py</div>
+        <div class="pipe-desc">Multi-threaded: transit API, proximity, text match, price z-score</div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-num">5</div>
+        <div class="pipe-title">Ranking</div>
+        <div class="pipe-file">ranking.py</div>
+        <div class="pipe-desc">Weighted scoring + embeddings + user profile + reason generation</div>
+      </div>
+    </div>
+
+    <div class="three-col" style="margin-top:32px;">
+      <div class="card highlight">
+        <div class="badge llm" style="margin-bottom:12px;">🤖 LLM (Claude Haiku)</div>
+        <h4>Stages 1 &amp; 3</h4>
+        <p style="font-size:13px;">Claude Haiku 4.5 with structured tool-use extracts hard constraints and soft preferences from natural language. 5-second timeout with instant fallback.</p>
+      </div>
+      <div class="card" style="border-color:#c4b5fd;">
+        <div class="badge embed" style="margin-bottom:12px;">🧠 Embeddings</div>
+        <h4>Stage 5</h4>
+        <p style="font-size:13px;">Sentence-transformers <code>all-MiniLM-L6-v2</code> computes cosine similarity between a user's ideal description and each listing's text. Pre-loaded at startup.</p>
+      </div>
+      <div class="card" style="border-color:#bbf7d0;">
+        <div class="badge api" style="margin-bottom:12px;">🚋 Transit API</div>
+        <h4>Stage 4</h4>
+        <p style="font-size:13px;">Real-time Swiss public transport API (transport.opendata.ch) calculates actual transit times from listings to named commute destinations, with haversine fallback.</p>
+      </div>
+    </div>
+  </div>
+
+  <hr/>
+
+  <!-- STAGE 1: HARD EXTRACTION -->
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-num">03</div>
+      <div class="sec-title">
+        <h2>Stage 1 — Hard Fact Extraction</h2>
+        <h3>Understanding Strict Requirements</h3>
+      </div>
+    </div>
+    <div class="two-col">
+      <div>
+        <p>The hard extraction stage identifies <strong>non-negotiable constraints</strong>: things the user absolutely requires. It runs in two modes with automatic fallback:</p>
+        <div class="flow" style="margin-top:20px;">
+          <div class="flow-item">
+            <div class="flow-dot">🤖</div>
+            <div class="flow-content">
+              <h4>Primary: Claude Haiku with Tool Use</h4>
+              <p>A structured tool call forces the LLM to output a validated JSON object. The system prompt includes Swiss-specific context (room conventions, canton codes, multilingual names). The model understands "3 rooms" → min 3.0, max 3.5 (Swiss half-room convention).</p>
+            </div>
+          </div>
+          <div class="flow-item">
+            <div class="flow-dot">📐</div>
+            <div class="flow-content">
+              <h4>Fallback: Regex Rule Engine</h4>
+              <p>If the LLM call fails or times out (5s), 20+ handcrafted regex patterns extract constraints from the query. Handles price formats (CHF/Fr./Franken), dates in 3 languages, room ranges, area in m², canton codes.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h4>Extracted Constraint Types</h4>
+          <table style="margin:12px 0 0 0; font-size:12px;">
+            <tr><th>Field</th><th>Example</th></tr>
+            <tr><td><strong>city</strong></td><td>"zürich" → ["Zürich","Zurich"]</td></tr>
+            <tr><td><strong>postal_code</strong></td><td>"PLZ 8001" → ["8001"]</td></tr>
+            <tr><td><strong>canton</strong></td><td>"in Zurich canton" → "ZH"</td></tr>
+            <tr><td><strong>max_price</strong></td><td>"under 2'800 CHF" → 2800</td></tr>
+            <tr><td><strong>min/max_rooms</strong></td><td>"3 rooms" → 3.0 / 3.5</td></tr>
+            <tr><td><strong>min_area</strong></td><td>"at least 80 m²" → 80</td></tr>
+            <tr><td><strong>available_before</strong></td><td>"from September" → 2026-09-01</td></tr>
+            <tr><td><strong>features</strong></td><td>"with garage" → ["garage"]</td></tr>
+            <tr><td><strong>offer_type</strong></td><td>"for rent" → "RENT"</td></tr>
+          </table>
+        </div>
+        <div class="card highlight" style="margin-top:16px;">
+          <h4>🇨🇭 Swiss-Specific Intelligence</h4>
+          <ul>
+            <li>189 city name variants (incl. umlauts, FR/DE pairs)</li>
+            <li>26 canton codes + full name mapping</li>
+            <li>Half-room convention (1.5, 2.5, 3.5 Zimmer)</li>
+            <li>Swiss price formats (CHF, Fr., Franken)</li>
+            <li>3-language month names for date parsing</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAGE 2: HARD FILTERING -->
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-num">04</div>
+      <div class="sec-title">
+        <h2>Stage 2 — Hard Filtering</h2>
+        <h3>SQL-Powered Candidate Retrieval</h3>
+      </div>
+    </div>
+    <div class="two-col">
+      <div>
+        <p>Hard filters are translated into <strong>parameterized SQL WHERE clauses</strong> (no injection risk) against the SQLite listings database. The query retrieves a pool of at least 200 candidates to ensure downstream price statistics are market-representative.</p>
+        <div class="cards two" style="margin-top:16px;">
+          <div class="card">
+            <h4>Geographic</h4>
+            <ul>
+              <li>City (case-insensitive)</li>
+              <li>Postal code list</li>
+              <li>Canton code</li>
+              <li>Radius (haversine km)</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>Property</h4>
+            <ul>
+              <li>Price range (CHF)</li>
+              <li>Room range (half-rooms)</li>
+              <li>Living area (m²)</li>
+              <li>Availability date</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>Amenities</h4>
+            <ul>
+              <li>Balcony / Elevator</li>
+              <li>Parking / Garage</li>
+              <li>Pets allowed</li>
+              <li>Wheelchair accessible</li>
+              <li>Minergie certified</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>Classification</h4>
+            <ul>
+              <li>RENT vs SALE</li>
+              <li>Object category</li>
+              <li>Sort (price/rooms)</li>
+              <li>Limit + offset</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card accent">
+          <h4>🔑 Pool Expansion Strategy</h4>
+          <p style="font-size:13px;">The system always fetches <strong>max(limit+offset, 200)</strong> listings from the database — even if the user only wants 25 results. This ensures the price z-score normalization in Stage 4 reflects the <em>actual filtered market</em>, not just the first page.</p>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <h4>Availability Logic</h4>
+          <p style="font-size:13px;">Listings with <code>NULL</code> availability dates or the sentinel <code>1970-01-01</code> are treated as <em>immediately available</em> — a realistic assumption for the Swiss rental market where many listings don't specify a date.</p>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <h4>Pagination</h4>
+          <p style="font-size:13px;">Offset is applied <em>after</em> soft filtering and ranking (not at the DB level). This guarantees that page 2 shows the next-best results, not just the next batch from an arbitrary SQL query.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr/>
+
+  <!-- STAGE 3: SOFT EXTRACTION -->
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-num">05</div>
+      <div class="sec-title">
+        <h2>Stage 3 — Soft Fact Extraction</h2>
+        <h3>Understanding Preferences &amp; Intent</h3>
+      </div>
+    </div>
+    <p>After filtering, a second Claude Haiku call extracts <strong>qualitative preferences</strong>: the things the user wants but aren't dealbreakers. Each preference gets a numeric importance weight.</p>
+    <div class="two-col" style="margin-top:24px;">
+      <div>
+        <h4 style="margin-bottom:12px;">18 Preference Categories</h4>
+        <div class="tags">
+          <span class="tag green">bright</span><span class="tag green">modern</span><span class="tag green">renovated</span>
+          <span class="tag green">quiet</span><span class="tag green">spacious</span><span class="tag green">cozy</span>
+          <span class="tag blue">garden</span><span class="tag blue">views</span><span class="tag blue">balcony</span>
+          <span class="tag blue">elevator</span><span class="tag blue">fireplace</span><span class="tag blue">parking</span>
+          <span class="tag blue">pet-friendly</span><span class="tag blue">new build</span>
+          <span class="tag orange">transport</span><span class="tag orange">shop</span>
+          <span class="tag orange">school</span><span class="tag orange">kindergarten</span>
+          <span class="tag gray">affordable</span><span class="tag gray">luxury</span><span class="tag gray">family-friendly</span>
+        </div>
+        <h4 style="margin-top:20px; margin-bottom:12px;">Weight Scale</h4>
+        <table>
+          <tr><th>Weight</th><th>Language cue</th></tr>
+          <tr><td><strong>1.0</strong></td><td>"must", "need", "require", "essential"</td></tr>
+          <tr><td><strong>0.7</strong></td><td>"really want", "important", "definitely"</td></tr>
+          <tr><td><strong>0.4</strong></td><td>"ideally", "prefer", "would like"</td></tr>
+          <tr><td><strong>0.2</strong></td><td>"nice if", "if possible", "bonus"</td></tr>
+        </table>
+      </div>
+      <div>
+        <div class="card highlight">
+          <h4>✨ Advanced Extractions</h4>
+          <div class="feature-row">
+            <div class="feature-icon">🚫</div>
+            <div class="feature-text">
+              <h4>Negative Signals</h4>
+              <p>Things to explicitly avoid: "not ground floor", "away from motorways", "not dark"</p>
+            </div>
+          </div>
+          <div class="feature-row">
+            <div class="feature-icon">📍</div>
+            <div class="feature-text">
+              <h4>Target Landmark</h4>
+              <p>Named commute destination: "ETH Zürich", "Zurich HB", "Google Zurich" — used for real transit time calculation</p>
+            </div>
+          </div>
+          <div class="feature-row">
+            <div class="feature-icon">✍️</div>
+            <div class="feature-text">
+              <h4>Ideal Description</h4>
+              <p>LLM writes a 2-sentence ideal listing description, used as the embedding query for semantic similarity ranking</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAGE 4: SOFT SCORING -->
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-num">06</div>
+      <div class="sec-title">
+        <h2>Stage 4 — Soft Scoring</h2>
+        <h3>Multi-dimensional Candidate Evaluation</h3>
+      </div>
+    </div>
+    <p>Each candidate listing is scored across multiple dimensions using a <strong>multi-threaded engine (8 worker pool)</strong>. Every score is normalized to [0, 1].</p>
+
+    <div class="cards" style="margin-top:24px;">
+      <div class="card">
+        <div class="card-icon">💰</div>
+        <h4>Price Value Score</h4>
+        <p style="font-size:13px;">Z-score normalization relative to the filtered candidate pool. A listing priced 1 standard deviation below the mean scores near 1.0; 1 SD above scores near 0.0. Reflects <em>value for the specific market</em>, not absolute price.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🚋</div>
+        <h4>Transit Proximity Score</h4>
+        <p style="font-size:13px;">If a landmark was specified, uses the <strong>Swiss transport.opendata.ch API</strong> to find the nearest station and compute real transit time. Pre-filters to 40 closest candidates (haversine) to minimize API calls. Cached at 2048 entries.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📝</div>
+        <h4>Text Matching Score</h4>
+        <p style="font-size:13px;"><strong>174 synonym mappings</strong> across EN/DE/FR for each preference label. Uses substring search + synonym overlap + word-level partial matching against title + description + image descriptions + feature tags.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🏫</div>
+        <h4>Proximity Scores</h4>
+        <p style="font-size:13px;">Linear decay functions for: school (≤800m = 1.0), kindergarten (≤600m), shops (≤500m), public transport (≤1000m). Requires listings with coordinates.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🚫</div>
+        <h4>Negative Signal Penalty</h4>
+        <p style="font-size:13px;">Fraction of negative keywords found in the listing text. Applied as a multiplicative penalty to the final score: <code>score × (1 − penalty)</code>.</p>
+      </div>
+      <div class="card highlight">
+        <div class="card-icon">🌐</div>
+        <h4>Multilingual Synonyms</h4>
+        <p style="font-size:13px; color:#166534;"><strong>174 synonym mappings</strong> per preference label across English, German, and French ensure listings described in any language score correctly regardless of the query language.</p>
+      </div>
+    </div>
+  </div>
+
+  <hr/>
+
+  <!-- STAGE 5: RANKING -->
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-num">07</div>
+      <div class="sec-title">
+        <h2>Stage 5 — Ranking</h2>
+        <h3>The Scoring Formula</h3>
+      </div>
+    </div>
+    <div class="two-col">
+      <div>
+        <p>The ranking model combines all signals into a single score using a <strong>weighted aggregation</strong> over stated preferences, semantic similarity, and proximity — plus an optional user profile multiplier.</p>
+        <div class="formula">
+<span class="comment">// 1. Weighted preference aggregation</span>
+<span class="c1">score</span> = Σ(<span class="c2">pref.weight</span> × <span class="c3">soft_scores[pref.label]</span>)
+       / <span class="c2">total_weight</span>
+
+<span class="comment">// 2. Semantic embedding (if ideal_description)</span>
++= <span class="c3">cosine_sim</span>(ideal_desc, listing_text) × <span class="c2">1.0</span>
+
+<span class="comment">// 3. Landmark proximity (if target)</span>
++= <span class="c3">transit_score</span> × <span class="c2">1.0</span>
+
+<span class="comment">// 4. Price value tiebreaker</span>
++= <span class="c3">price_z_score</span> × <span class="c2">0.2</span>
+
+<span class="comment">// 5. Negative penalty</span>
+×= (1.0 − <span class="c3">negative_signal_penalty</span>)
+
+<span class="comment">// 6. User profile multiplier [0.1 → 1.3]</span>
+×= <span class="c3">profile_multiplier</span>(candidate, user_profile)
+
+<span class="comment">// 7. Clamp</span>
+<span class="c1">final_score</span> = min(1.0, <span class="c1">score</span>)
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h4>🧠 Semantic Embeddings</h4>
+          <p style="font-size:13px;">Model: <code>all-MiniLM-L6-v2</code> (384-dim vectors, pre-loaded at startup). The LLM generates a 2-sentence "ideal listing" description from the user's query. The model encodes both this description and each listing's text (title + description + image text). Cosine similarity between normalized embeddings gives a semantic relevance score independent of keyword matching.</p>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <h4>👤 User Profile Personalization</h4>
+          <p style="font-size:13px;">Built from interaction history (clicks, views, image browses). Applies a confidence-weighted multiplier (0.1–1.3×) based on: city affinity, feature affinity, budget fit, aesthetic preferences, negative pattern penalties. New users start with confidence=0 (no boost).</p>
+        </div>
+        <div class="card highlight" style="margin-top:16px;">
+          <h4>💬 Human-Readable Explanations</h4>
+          <p style="font-size:13px; color:#166534;">Every result includes an auto-generated reason string: <em>"+ bright, quiet | ~ transport | - garden | ~12 min by transit | below-average price"</em> — shown as color-coded badges in the UI.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr/>
+
+  <!-- FRONTEND -->
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-num">08</div>
+      <div class="sec-title">
+        <h2>Frontend</h2>
+        <h3>The User Interface</h3>
+      </div>
+    </div>
+    <p>Built with <strong>React 19 + Vite + MapLibre GL</strong>. Fully self-contained static build served from the same FastAPI backend — no separate hosting needed.</p>
+
+    <div class="cards" style="margin-top:24px;">
+      <div class="card">
+        <div class="card-icon">🏠</div>
+        <h4>Welcome Page</h4>
+        <ul>
+          <li>Hero search bar (autofocus)</li>
+          <li>3 example query chips</li>
+          <li>Instant transition to results</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-icon">📋</div>
+        <h4>Ranked List (Sidebar)</h4>
+        <ul>
+          <li>Cards with image gallery</li>
+          <li>Swipe navigation (touch)</li>
+          <li>Rank badge (#1, #2…)</li>
+          <li>Price + rooms + city</li>
+          <li>Color-coded reason badges</li>
+          <li>Add to comparison (max 3)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-icon">🗺️</div>
+        <h4>Interactive Map</h4>
+        <ul>
+          <li>MapLibre GL vector tiles</li>
+          <li>Clickable price markers</li>
+          <li>Auto-fit to results</li>
+          <li>Selected listing zoom</li>
+          <li>Popup on hover/click</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔍</div>
+        <h4>Listing Detail Modal</h4>
+        <ul>
+          <li>Full image gallery</li>
+          <li>Google Maps link</li>
+          <li>"Why this matches" section</li>
+          <li>"What you'll love" section</li>
+          <li>Full description rendering</li>
+          <li>Availability date</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚖️</div>
+        <h4>Comparison Table</h4>
+        <ul>
+          <li>Side-by-side up to 3 listings</li>
+          <li>Highlights best price</li>
+          <li>Highlights most rooms</li>
+          <li>Highlights largest area</li>
+          <li>Reason + pros/cons rows</li>
+        </ul>
+      </div>
+      <div class="card highlight">
+        <div class="card-icon">📊</div>
+        <h4>Interaction Analytics</h4>
+        <ul>
+          <li>Click / View / Image browse</li>
+          <li>3-second dwell-time tracking</li>
+          <li>Feeds user profile engine</li>
+          <li>Query logged per event</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ENGINEERING -->
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-num">09</div>
+      <div class="sec-title">
+        <h2>Engineering</h2>
+        <h3>Notable Technical Decisions</h3>
+      </div>
+    </div>
+
+    <table>
+      <tr>
+        <th>Decision</th>
+        <th>Implementation</th>
+        <th>Why it matters</th>
+      </tr>
+      <tr>
+        <td><strong>LLM + Rule Fallback</strong></td>
+        <td>5-second timeout on Claude; instant regex fallback on any exception</td>
+        <td>Zero downtime if API is slow or rate-limited; search always returns results</td>
+      </tr>
+      <tr>
+        <td><strong>Pool Expansion</strong></td>
+        <td>Fetch ≥200 candidates before ranking; apply offset after ranking</td>
+        <td>Price z-scores reflect real market context; page 2 = truly next-best results</td>
+      </tr>
+      <tr>
+        <td><strong>Parallel Scoring</strong></td>
+        <td>ThreadPoolExecutor with 8 workers for transit API calls</td>
+        <td>Transit scores for 40 candidates in parallel, not sequentially</td>
+      </tr>
+      <tr>
+        <td><strong>Aggressive Caching</strong></td>
+        <td>LRU cache: 64 geocode, 512 station lookup, 2048 transit time</td>
+        <td>Repeated queries for same landmarks are instant</td>
+      </tr>
+      <tr>
+        <td><strong>Embedding Pre-load</strong></td>
+        <td>Model loaded at server startup; warm-up call in FastAPI lifespan</td>
+        <td>First search is fast; no cold-start delay on first query</td>
+      </tr>
+      <tr>
+        <td><strong>Single-URL Deployment</strong></td>
+        <td>Frontend built into Docker image; served via FastAPI StaticFiles</td>
+        <td>One URL for the jury — no CORS issues, no separate hosting</td>
+      </tr>
+      <tr>
+        <td><strong>Multilingual City Map</strong></td>
+        <td>189 hand-curated city → DB variant mappings</td>
+        <td>User typing "Zurich", "Zürich", "Zuerich" all hit the same listings</td>
+      </tr>
+      <tr>
+        <td><strong>Parameterized SQL</strong></td>
+        <td>All DB queries use placeholders, never string interpolation</td>
+        <td>No SQL injection risk regardless of user input</td>
+      </tr>
+    </table>
+  </div>
+
+  <hr/>
+
+  <!-- STATS SUMMARY -->
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-num">10</div>
+      <div class="sec-title">
+        <h2>Summary</h2>
+        <h3>By the Numbers</h3>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-num">5</div>
+        <div class="stat-label">Pipeline Stages</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">2</div>
+        <div class="stat-label">LLM Calls per query</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">18</div>
+        <div class="stat-label">Soft Preferences</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">11</div>
+        <div class="stat-label">Hard Amenity Filters</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">189</div>
+        <div class="stat-label">City Name Variants</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">174</div>
+        <div class="stat-label">Synonym Mappings</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">384</div>
+        <div class="stat-label">Embedding Dimensions</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">3</div>
+        <div class="stat-label">Languages (EN/DE/FR)</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">8</div>
+        <div class="stat-label">Parallel Workers</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">200+</div>
+        <div class="stat-label">Candidate Pool Size</div>
+      </div>
+    </div>
+
+    <div class="two-col" style="margin-top:32px;">
+      <div class="card highlight">
+        <h4>🔑 The Core Value Proposition</h4>
+        <p style="font-size:13px; color:#166534;">RobinReal doesn't just filter — it <em>understands</em>. A user saying "quiet flat near ETH for a young professional, max CHF 2'200" gets results ranked by: semantic match to the ideal description, real transit time to ETH Zürich, price value relative to the Zürich market, and learned preferences from their search history. Every result explains itself.</p>
+      </div>
+      <div class="card accent">
+        <h4>🚀 Live Demo</h4>
+        <p style="font-size:13px;">The system is deployed via Docker + Cloudflare tunnel. The frontend is publicly accessible — no installation required for the jury. Try:</p>
+        <ul>
+          <li style="font-size:13px;">"Bright 3-room flat in Zürich under CHF 2'500"</li>
+          <li style="font-size:13px;">"House with garden for sale near Zug, family-friendly"</li>
+          <li style="font-size:13px;">"Studio close to ETH Zürich, good transport links"</li>
+          <li style="font-size:13px;">"Ruhige Wohnung in Basel, max 1800 CHF, Balkon"</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center; padding: 48px 0 24px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border);">
+    RobinReal · Zurich Datathon 2026 · <em>Search quality through AI understanding</em>
+  </div>
+
+</div>
+</body>
+</html>
