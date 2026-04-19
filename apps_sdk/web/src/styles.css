@@ -22,6 +22,223 @@ body {
     linear-gradient(180deg, #edf3f8 0%, #f7fafc 100%);
 }
 
+/* ---- Welcome page ---- */
+
+.welcome-page {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  overflow: hidden;
+}
+
+/* Decorative geometric blobs */
+.welcome-bg-accent {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.welcome-bg-accent--tl {
+  width: 600px;
+  height: 600px;
+  top: -180px;
+  left: -180px;
+  background: radial-gradient(circle, rgba(31, 95, 139, 0.09) 0%, transparent 70%);
+}
+
+.welcome-bg-accent--br {
+  width: 500px;
+  height: 500px;
+  bottom: -140px;
+  right: -100px;
+  background: radial-gradient(circle, rgba(207, 92, 54, 0.07) 0%, transparent 70%);
+}
+
+.welcome-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 720px;
+  padding: 0 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 32px;
+}
+
+/* Brand wordmark */
+.welcome-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1f5f8b;
+  letter-spacing: -0.01em;
+}
+
+.welcome-brand-mark {
+  display: inline-block;
+  width: 4px;
+  height: 22px;
+  background: #1f5f8b;
+  border-radius: 2px;
+}
+
+/* Hero */
+.welcome-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.welcome-title {
+  margin: 0;
+  font-size: clamp(2.4rem, 6vw, 3.8rem);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  color: #0c1e2e;
+}
+
+.welcome-subtitle {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: #5a7385;
+  max-width: 520px;
+}
+
+/* Search bar */
+.welcome-search {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 24px;
+  background: #ffffff;
+  border: 1.5px solid rgba(20, 34, 51, 0.14);
+  border-radius: 999px;
+  box-shadow:
+    0 4px 20px rgba(20, 34, 51, 0.1),
+    0 1px 4px rgba(20, 34, 51, 0.06);
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.welcome-search:focus-within {
+  border-color: rgba(31, 95, 139, 0.45);
+  box-shadow:
+    0 4px 20px rgba(20, 34, 51, 0.1),
+    0 0 0 3px rgba(31, 95, 139, 0.1);
+}
+
+.welcome-search-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 1.05rem;
+  color: #142233;
+}
+
+.welcome-search-input::placeholder { color: #96b0c0; }
+.welcome-search-input:disabled { opacity: 0.6; }
+
+.welcome-search-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 100px;
+  height: 50px;
+  padding: 0 26px;
+  border: none;
+  border-radius: 999px;
+  background: #1f5f8b;
+  color: #fff;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.14s ease, opacity 0.14s ease;
+}
+
+.welcome-search-btn:hover:not(:disabled) { background: #174d73; }
+.welcome-search-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* Quick-start chips */
+.welcome-examples {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.welcome-examples-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #8faabb;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-top: 6px;
+  white-space: nowrap;
+}
+
+.welcome-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.welcome-chip {
+  display: inline-block;
+  padding: 7px 14px;
+  border: 1.5px solid rgba(31, 95, 139, 0.22);
+  border-radius: 999px;
+  background: rgba(31, 95, 139, 0.04);
+  color: #1f5f8b;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.1s ease;
+  text-align: left;
+}
+
+.welcome-chip:hover:not(:disabled) {
+  background: rgba(31, 95, 139, 0.1);
+  border-color: rgba(31, 95, 139, 0.4);
+  transform: translateY(-1px);
+}
+
+.welcome-chip:disabled { opacity: 0.5; cursor: default; }
+
+/* Footer */
+.welcome-footer {
+  position: absolute;
+  bottom: 24px;
+  margin: 0;
+  font-size: 0.78rem;
+  color: #aabcc8;
+  letter-spacing: 0.02em;
+}
+
+/* App-shell fade-in after welcome */
+.app-shell--revealed {
+  animation: shell-reveal 0.35s ease both;
+}
+
+@keyframes shell-reveal {
+  from { opacity: 0; transform: scale(0.995); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
 /* ---- Layout ---- */
 
 .app-shell {

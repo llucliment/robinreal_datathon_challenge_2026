@@ -3,6 +3,7 @@ import ListingDetail from "./components/ListingDetail";
 import ListingsMap from "./components/ListingsMap";
 import QueryBar from "./components/QueryBar";
 import RankedList from "./components/RankedList";
+import WelcomePage from "./components/WelcomePage";
 import type { RankedListingResult } from "./utils/api";
 import { logInteraction, searchListings } from "./utils/api";
 import { getUserId } from "./utils/userId";
@@ -48,6 +49,9 @@ const DWELL_THRESHOLD_MS = 3_000;
 // ---------------------------------------------------------------------------
 export default function App() {
   const userId = useMemo(() => getUserId(), []);
+
+  // Welcome page
+  const [showWelcome, setShowWelcome] = useState(true);
 
   // Direct search state
   const [searchResults, setSearchResults] = useState<RankedListingResult[]>([]);
@@ -145,6 +149,7 @@ export default function App() {
   };
 
   const handleSearch = async (query: string) => {
+    setShowWelcome(false);
     setLoading(true);
     setError(null);
     setLastQuery(query);
@@ -161,9 +166,13 @@ export default function App() {
   // -------------------------------------------------------------------------
   // Render
   // -------------------------------------------------------------------------
+  if (showWelcome) {
+    return <WelcomePage onSearch={handleSearch} loading={loading} />;
+  }
+
   return (
     <>
-      <div className="app-shell">
+      <div className="app-shell app-shell--revealed">
         <aside className="sidebar">
           <div className="sidebar-brand">
             <span className="sidebar-brand-name">RobinReal</span>
@@ -189,7 +198,7 @@ export default function App() {
             onSelect={handleSelect}
             onOpenDetail={handleOpenDetail}
           />
-          <QueryBar onSearch={handleSearch} loading={loading} />
+          <QueryBar onSearch={handleSearch} loading={loading} initialValue={lastQuery} />
         </main>
       </div>
 

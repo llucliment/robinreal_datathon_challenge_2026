@@ -3,10 +3,11 @@ import { useState } from "react";
 type QueryBarProps = {
   onSearch: (query: string) => void;
   loading: boolean;
+  initialValue?: string;
 };
 
-export default function QueryBar({ onSearch, loading }: QueryBarProps) {
-  const [value, setValue] = useState("");
+export default function QueryBar({ onSearch, loading, initialValue = "" }: QueryBarProps) {
+  const [value, setValue] = useState(initialValue);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

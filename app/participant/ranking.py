@@ -193,7 +193,8 @@ def _score(
         score *= multiplier
 
     score = min(1.0, score)
-    reason = _build_reason(contributions, penalty, profile_boosts)
+    has_landmark = bool(criteria.target_landmark)
+    reason = _build_reason(contributions, penalty, profile_boosts, has_landmark=has_landmark)
 
     # Clean up internal keys before returning the candidate for ListingData
     candidate.pop("_feature_tags", None)
@@ -206,6 +207,7 @@ def _build_reason(
     contributions: list[tuple[float, str, float]],
     penalty: float,
     profile_boosts: list[str] | None = None,
+    has_landmark: bool = False,
 ) -> str:
     if not contributions and penalty == 0.0:
         return "Matched hard filters only."
@@ -229,7 +231,7 @@ def _build_reason(
     if missing:
         parts.append("- " + ", ".join(missing[:3]))
 
-    if proximity_raw is not None:
+    if proximity_raw is not None and has_landmark:
         transit_min = next((raw for _, label, raw in contributions if label == "transit_minutes_to_landmark"), None)
         if transit_min is not None:
             parts.append(f"~{int(transit_min)} min by transit")
