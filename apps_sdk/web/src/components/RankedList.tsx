@@ -1,5 +1,7 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { RankedListingResult } from "../utils/api";
+import { resolveImageUrl } from "../utils/api";
+import ReasonDisplay from "./ReasonDisplay";
 
 type RankedListProps = {
   results: RankedListingResult[];
@@ -8,8 +10,7 @@ type RankedListProps = {
   onInteract?: (listingId: string, eventType: "image_browse") => void;
 };
 
-function formatPrice(price?: number | null): string {
-  if (price == null) return "Price n/a";
+function formatPrice(price: number): string {
   return new Intl.NumberFormat("de-CH", {
     style: "currency",
     currency: "CHF",
@@ -17,18 +18,50 @@ function formatPrice(price?: number | null): string {
   }).format(price);
 }
 
+const SINGLE_UNIT_CATEGORIES = new Set([
+  "einzelzimmer", "wg-zimmer", "einzelgarage",
+  "parkplatz", "parkplatz, garage", "tiefgarage",
+]);
+
+function displayRooms(listing: RankedListingResult["listing"]): string {
+  if (listing.rooms != null) return String(listing.rooms);
+  if (listing.object_category && SINGLE_UNIT_CATEGORIES.has(listing.object_category.toLowerCase())) return "1";
+  return "?";
+}
+
+function generateTitle(listing: RankedListingResult["listing"]): string {
+  const rooms = listing.rooms ? `${listing.rooms}-room` : null;
+  const category = listing.object_category
+    ? listing.object_category.charAt(0).toUpperCase() +
+      listing.object_category.slice(1).toLowerCase().replace(/_/g, " ")
+    : "Property";
+  const city = listing.city ?? null;
+  return [rooms, category, city ? `· ${city}` : null].filter(Boolean).join(" ");
+}
+
 function getImageUrls(listing: RankedListingResult["listing"]): string[] {
-  const candidates = [listing.hero_image_url, ...(listing.image_urls ?? [])].filter(
-    (v): v is string => Boolean(v),
-  );
+  const candidates = [listing.hero_image_url, ...(listing.image_urls ?? [])]
+    .filter((v): v is string => Boolean(v))
+    .map(resolveImageUrl);
   return Array.from(new Set(candidates));
 }
 
 export default function RankedList({ results, selectedId, onSelect, onInteract }: RankedListProps) {
   const [imageIndexes, setImageIndexes] = useState<Record<string, number>>({});
   const touchStartXRef = useRef<Record<string, number>>({});
+  const cardRefs = useRef<Record<string, HTMLElement | null>>({});
 
-  if (!results.length) {
+  // Scroll the selected card into view when selection comes from the map
+  useEffect(() => {
+    if (selectedId && cardRefs.current[selectedId]) {
+      cardRefs.current[selectedId]!.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [selectedId]);
+
+  // Filter out listings with no price
+  const priced = results.filter((r) => r.listing.price_chf != null);
+
+  if (!priced.length) {
     return (
       <div className="empty-state">
         <p>No results yet.</p>
@@ -39,7 +72,7 @@ export default function RankedList({ results, selectedId, onSelect, onInteract }
 
   return (
     <div className="ranked-list">
-      {results.map((result, index) => {
+      {priced.map((result, index) => {
         const listing = result.listing;
         const features = (listing.features ?? []).slice(0, 4);
         const imageUrls = getImageUrls(listing);
@@ -52,15 +85,18 @@ export default function RankedList({ results, selectedId, onSelect, onInteract }
           if (imageUrls.length <= 1) return;
           onInteract?.(result.listing_id, "image_browse");
           setImageIndexes((current) => {
-            const current_ = current[result.listing_id] ?? 0;
-            const next = (current_ + delta + imageUrls.length) % imageUrls.length;
-            return { ...current, [result.listing_id]: next };
+            const cur = current[result.listing_id] ?? 0;
+            return {
+              ...current,
+              [result.listing_id]: (cur + delta + imageUrls.length) % imageUrls.length,
+            };
           });
         };
 
         return (
           <div
             key={result.listing_id}
+            ref={(el) => { cardRefs.current[result.listing_id] = el; }}
             className={`listing-card ${selectedId === result.listing_id ? "selected" : ""}`}
             onClick={() => onSelect(result.listing_id)}
             onKeyDown={(e) => {
@@ -81,17 +117,13 @@ export default function RankedList({ results, selectedId, onSelect, onInteract }
                       className="listing-image-button listing-image-button-prev"
                       onClick={(e) => { e.stopPropagation(); advanceImage(-1); }}
                       type="button"
-                    >
-                      ‹
-                    </button>
+                    >‹</button>
                     <button
                       aria-label="Next image"
                       className="listing-image-button listing-image-button-next"
                       onClick={(e) => { e.stopPropagation(); advanceImage(1); }}
                       type="button"
-                    >
-                      ›
-                    </button>
+                    >›</button>
                     <div className="listing-image-count">
                       {activeIndex + 1}/{imageUrls.length}
                     </div>
@@ -102,16 +134,19 @@ export default function RankedList({ results, selectedId, onSelect, onInteract }
                   src={activeImageUrl}
                   alt={listing.title}
                   loading="lazy"
+                  onError={(e) => {
+                    const wrap = (e.currentTarget as HTMLElement).closest(
+                      ".listing-image-wrap",
+                    ) as HTMLElement | null;
+                    if (wrap) wrap.style.display = "none";
+                  }}
                   onTouchEnd={(e) => {
                     const startX = touchStartXRef.current[result.listing_id];
                     if (startX == null) return;
                     const endX = e.changedTouches[0]?.clientX;
                     if (typeof endX !== "number") return;
                     const deltaX = endX - startX;
-                    if (Math.abs(deltaX) < 36) {
-                      onSelect(result.listing_id);
-                      return;
-                    }
+                    if (Math.abs(deltaX) < 36) { onSelect(result.listing_id); return; }
                     advanceImage(deltaX < 0 ? 1 : -1);
                   }}
                   onTouchStart={(e) => {
@@ -124,16 +159,16 @@ export default function RankedList({ results, selectedId, onSelect, onInteract }
 
             <div className="listing-card-header">
               <span className="listing-rank">#{index + 1}</span>
-              <span className="listing-score">{result.score.toFixed(2)}</span>
+              <span className="listing-ref">ref {listing.id}</span>
             </div>
-            <h2>{listing.title}</h2>
+            <h2>{generateTitle(listing)}</h2>
             <p className="listing-meta">
               {[listing.city, listing.canton].filter(Boolean).join(", ")}
             </p>
-            <p className="listing-meta">
-              {formatPrice(listing.price_chf)} · {listing.rooms ?? "?"} rooms
+            <p className="listing-price">
+              {formatPrice(listing.price_chf!)} · {displayRooms(listing)} rooms
             </p>
-            <p className="listing-reason">{result.reason}</p>
+            <ReasonDisplay reason={result.reason} />
             {features.length > 0 && (
               <div className="feature-row">
                 {features.map((f) => (

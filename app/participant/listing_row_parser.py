@@ -270,6 +270,15 @@ def prepare_listing_row(row: dict[str, str]) -> tuple[Any, ...]:
         else:
             street = street_name
 
+    object_category = _clean_text(row.get("object_category")) or ""
+    _SINGLE_UNIT_CATEGORIES = {
+        "einzelzimmer", "wg-zimmer", "einzelgarage",
+        "parkplatz", "parkplatz, garage", "tiefgarage",
+    }
+    rooms = _parse_float(row.get("number_of_rooms"))
+    if rooms is None and object_category.lower() in _SINGLE_UNIT_CATEGORIES:
+        rooms = 1.0
+
     return (
         str(row.get("id", "")).strip(),
         _clean_text(row.get("platform_id")),
@@ -281,7 +290,7 @@ def prepare_listing_row(row: dict[str, str]) -> tuple[Any, ...]:
         postal_code,
         canton,
         _derive_price(row),
-        _parse_float(row.get("number_of_rooms")),
+        rooms,
         _parse_float(row.get("area")),
         _parse_date(row.get("available_from")),
         _parse_float(row.get("geo_lat")),

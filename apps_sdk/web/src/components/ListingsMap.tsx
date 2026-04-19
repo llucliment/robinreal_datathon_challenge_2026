@@ -1,21 +1,7 @@
 import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-
-type ListingData = {
-  id: string;
-  title: string;
-  city?: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
-  price_chf?: number | null;
-};
-
-type RankedListingResult = {
-  listing_id: string;
-  score: number;
-  listing: ListingData;
-};
+import type { RankedListingResult } from "../utils/api";
 
 type ListingsMapProps = {
   results: RankedListingResult[];
@@ -51,6 +37,21 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
   ],
 };
 
+// Switzerland bounding box
+const SWITZERLAND_BOUNDS: maplibregl.LngLatBoundsLike = [
+  [5.96, 45.82],
+  [10.49, 47.81],
+];
+
+function formatPinPrice(price?: number | null): string {
+  if (price == null) return "—";
+  return new Intl.NumberFormat("de-CH", {
+    style: "currency",
+    currency: "CHF",
+    maximumFractionDigits: 0,
+  }).format(price);
+}
+
 export default function ListingsMap({
   results,
   selectedId,
@@ -62,28 +63,36 @@ export default function ListingsMap({
   const markersRef = useRef<maplibregl.Marker[]>([]);
 
   const coordinateResults = results.filter(
-    (result) =>
-      typeof result.listing.latitude === "number" &&
-      typeof result.listing.longitude === "number",
+    (r) =>
+      typeof r.listing.latitude === "number" &&
+      typeof r.listing.longitude === "number",
   );
 
   useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) {
-      return;
-    }
+    if (!mapContainerRef.current || mapRef.current) return;
 
     mapRef.current = new maplibregl.Map({
       container: mapContainerRef.current,
       style: MAP_STYLE,
-      center: [8.54, 47.37],
+      center: [8.23, 46.82],
       zoom: 7,
       attributionControl: false,
     });
 
-    mapRef.current.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+    mapRef.current.addControl(
+      new maplibregl.NavigationControl({ showCompass: false }),
+      "top-right",
+    );
+
+    mapRef.current.on("load", () => {
+      mapRef.current!.fitBounds(SWITZERLAND_BOUNDS, {
+        padding: { top: 40, bottom: 100, left: 40, right: 40 },
+        duration: 0,
+      });
+    });
 
     return () => {
-      markersRef.current.forEach((marker) => marker.remove());
+      markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
       mapRef.current?.remove();
       mapRef.current = null;
@@ -91,19 +100,17 @@ export default function ListingsMap({
   }, []);
 
   useEffect(() => {
-    markersRef.current.forEach((marker) => marker.remove());
+    markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
     const map = mapRef.current;
-    if (!map) {
-      return;
-    }
+    if (!map) return;
 
-    coordinateResults.forEach((result, index) => {
+    coordinateResults.forEach((result) => {
       const el = document.createElement("button");
       el.type = "button";
       el.className = `map-pin ${selectedId === result.listing_id ? "selected" : ""}`;
-      el.textContent = String(index + 1);
+      el.textContent = formatPinPrice(result.listing.price_chf);
       el.onclick = () => onSelect(result.listing_id);
 
       const marker = new maplibregl.Marker({ element: el })
@@ -120,37 +127,25 @@ export default function ListingsMap({
 
     if (coordinateResults.length) {
       const bounds = new maplibregl.LngLatBounds();
-      coordinateResults.forEach((result) => {
-        bounds.extend([result.listing.longitude!, result.listing.latitude!]);
-      });
-      map.fitBounds(bounds, { padding: 60, maxZoom: 13, duration: 0 });
+      coordinateResults.forEach((r) =>
+        bounds.extend([r.listing.longitude!, r.listing.latitude!]),
+      );
+      map.fitBounds(bounds, { padding: 80, maxZoom: 13, duration: 400 });
     }
   }, [coordinateResults, onSelect, selectedId]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !selectedListing) {
-      return;
-    }
-    if (
-      typeof selectedListing.listing.latitude === "number" &&
-      typeof selectedListing.listing.longitude === "number"
-    ) {
+    if (!map || !selectedListing) return;
+    const { latitude, longitude } = selectedListing.listing;
+    if (typeof latitude === "number" && typeof longitude === "number") {
       map.easeTo({
-        center: [selectedListing.listing.longitude, selectedListing.listing.latitude],
+        center: [longitude, latitude],
         zoom: Math.max(map.getZoom(), 12),
         duration: 500,
       });
     }
   }, [selectedListing]);
-
-  if (!coordinateResults.length) {
-    return (
-      <div className="map-empty-state">
-        <p>No coordinates available for the current result set.</p>
-      </div>
-    );
-  }
 
   return <div ref={mapContainerRef} className="map-container" />;
 }

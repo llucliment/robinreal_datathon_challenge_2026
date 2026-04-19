@@ -149,16 +149,13 @@ export default function App() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="sidebar-header">
-          <p className="eyebrow">RobinReal</p>
-          <h1>Listings</h1>
-          <p className="muted">
-            {results.length
-              ? `${results.length} result${results.length === 1 ? "" : "s"}`
-              : "Enter a query to find properties"}
-          </p>
-          {error && <p className="search-error">{error}</p>}
+        <div className="sidebar-brand">
+          <span className="sidebar-brand-name">RobinReal</span>
+          {results.length > 0 && (
+            <span className="sidebar-count">{results.length} results</span>
+          )}
         </div>
+        {error && <p className="search-error">{error}</p>}
         <RankedList
           results={results}
           selectedId={selectedId}

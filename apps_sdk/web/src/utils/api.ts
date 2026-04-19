@@ -48,6 +48,10 @@ export async function searchListings(
   return res.json() as Promise<SearchResponse>;
 }
 
+export function resolveImageUrl(url: string): string {
+  return url.startsWith("/") ? `${API_BASE_URL}${url}` : url;
+}
+
 export function logInteraction(
   userId: string,
   listingId: string,
