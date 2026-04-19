@@ -51,14 +51,12 @@ export default function RankedList({ results, selectedId, onSelect, onInteract }
   const touchStartXRef = useRef<Record<string, number>>({});
   const cardRefs = useRef<Record<string, HTMLElement | null>>({});
 
-  // Scroll the selected card into view when selection comes from the map
   useEffect(() => {
     if (selectedId && cardRefs.current[selectedId]) {
       cardRefs.current[selectedId]!.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
   }, [selectedId]);
 
-  // Filter out listings with no price
   const priced = results.filter((r) => r.listing.price_chf != null);
 
   if (!priced.length) {
@@ -74,7 +72,7 @@ export default function RankedList({ results, selectedId, onSelect, onInteract }
     <div className="ranked-list">
       {priced.map((result, index) => {
         const listing = result.listing;
-        const features = (listing.features ?? []).slice(0, 4);
+        const features = (listing.features ?? []).slice(0, 5);
         const imageUrls = getImageUrls(listing);
         const activeIndex = imageIndexes[result.listing_id] ?? 0;
         const activeImageUrl =
@@ -108,6 +106,7 @@ export default function RankedList({ results, selectedId, onSelect, onInteract }
             role="button"
             tabIndex={0}
           >
+            {/* Image section — full width, fixed height */}
             {activeImageUrl ? (
               <div className="listing-image-wrap">
                 {imageUrls.length > 1 && (
@@ -125,7 +124,7 @@ export default function RankedList({ results, selectedId, onSelect, onInteract }
                       type="button"
                     >›</button>
                     <div className="listing-image-count">
-                      {activeIndex + 1}/{imageUrls.length}
+                      {activeIndex + 1} / {imageUrls.length}
                     </div>
                   </>
                 )}
@@ -157,27 +156,42 @@ export default function RankedList({ results, selectedId, onSelect, onInteract }
               </div>
             ) : null}
 
-            <div className="listing-card-header">
-              <span className="listing-rank">#{index + 1}</span>
-              <span className="listing-ref">ref {listing.id}</span>
-            </div>
-            <h2>{generateTitle(listing)}</h2>
-            <p className="listing-meta">
-              {[listing.city, listing.canton].filter(Boolean).join(", ")}
-            </p>
-            <p className="listing-price">
-              {formatPrice(listing.price_chf!)} · {displayRooms(listing)} rooms
-            </p>
-            <ReasonDisplay reason={result.reason} />
-            {features.length > 0 && (
-              <div className="feature-row">
-                {features.map((f) => (
-                  <span key={f} className="feature-badge">
-                    {f.replaceAll("_", " ")}
-                  </span>
-                ))}
+            {/* Card body */}
+            <div className="listing-card-body">
+              {/* Price + rooms row */}
+              <div className="listing-price-row">
+                <span className="listing-price">{formatPrice(listing.price_chf!)}</span>
+                <span className="listing-rooms">{displayRooms(listing)} rooms</span>
               </div>
-            )}
+
+              {/* Title */}
+              <h2 className="listing-title">{generateTitle(listing)}</h2>
+
+              {/* Location */}
+              <p className="listing-meta">
+                {[listing.city, listing.canton].filter(Boolean).join(", ")}
+              </p>
+
+              {/* Reason badges */}
+              <ReasonDisplay reason={result.reason} />
+
+              {/* Feature badges */}
+              {features.length > 0 && (
+                <div className="feature-row">
+                  {features.map((f) => (
+                    <span key={f} className="feature-badge">
+                      {f.replaceAll("_", " ")}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Footer: rank + ref */}
+              <div className="listing-card-footer">
+                <span className="listing-rank">#{index + 1}</span>
+                <span className="listing-ref">ref {listing.id}</span>
+              </div>
+            </div>
           </div>
         );
       })}

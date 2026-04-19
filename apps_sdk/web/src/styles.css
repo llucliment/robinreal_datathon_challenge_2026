@@ -37,7 +37,7 @@ body {
   min-width: 0;
   padding: 14px;
   gap: 10px;
-  background: #f5f7fa;
+  background: #f0f4f8;
   border-right: 1px solid rgba(20, 34, 51, 0.08);
   overflow-x: hidden;
   overflow-y: auto;
@@ -73,42 +73,38 @@ body {
 .ranked-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  /* no overflow here — sidebar scrolls */
+  gap: 12px;
 }
 
 .listing-card {
-  border: 1px solid rgba(20, 34, 51, 0.08);
-  border-radius: 14px;
-  padding: 14px 16px;
+  border: 1px solid rgba(20, 34, 51, 0.09);
+  border-radius: 16px;
   background: #ffffff;
   text-align: left;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(20, 34, 51, 0.06);
-  transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
-  /* NO overflow: hidden — that collapses the card */
+  box-shadow: 0 2px 10px rgba(20, 34, 51, 0.07);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  overflow: hidden; /* safe — no negative margins used anymore */
 }
 
 .listing-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(20, 34, 51, 0.11);
+  box-shadow: 0 8px 28px rgba(20, 34, 51, 0.12);
 }
 
 .listing-card.selected {
-  border-color: rgba(20, 80, 120, 0.4);
-  box-shadow: 0 8px 24px rgba(20, 34, 51, 0.11), inset 3px 0 0 #1f5f8b;
+  border-color: rgba(31, 95, 139, 0.45);
+  box-shadow: 0 8px 28px rgba(20, 34, 51, 0.12), inset 3px 0 0 #1f5f8b;
 }
 
 /* ---- Card image ---- */
 
 .listing-image-wrap {
-  margin: -14px -16px 12px;
-  border-radius: 12px 12px 0 0;   /* own rounded top — no overflow:hidden on card needed */
-  overflow: hidden;
-  aspect-ratio: 16 / 7;
-  max-height: 180px;
-  background: #dfe8ef;
+  width: 100%;
+  height: 210px;
   position: relative;
+  background: #dfe8ef;
+  overflow: hidden;
 }
 
 .listing-image {
@@ -123,69 +119,89 @@ body {
   top: 50%;
   z-index: 1;
   transform: translateY(-50%);
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border: none;
-  border-radius: 999px;
-  background: rgba(20, 34, 51, 0.7);
+  border-radius: 50%;
+  background: rgba(10, 20, 35, 0.55);
   color: #fff;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   line-height: 1;
   cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background 0.12s ease;
 }
 
-.listing-image-button-prev { left: 8px; }
-.listing-image-button-next { right: 8px; }
+.listing-image-button:hover {
+  background: rgba(10, 20, 35, 0.78);
+}
+
+.listing-image-button-prev { left: 10px; }
+.listing-image-button-next { right: 10px; }
 
 .listing-image-count {
   position: absolute;
-  right: 8px;
-  bottom: 8px;
+  right: 10px;
+  bottom: 10px;
   z-index: 1;
   border-radius: 999px;
-  padding: 3px 8px;
-  background: rgba(20, 34, 51, 0.65);
+  padding: 3px 9px;
+  background: rgba(10, 20, 35, 0.58);
   color: #fff;
   font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(4px);
 }
 
-/* ---- Card content ---- */
+/* ---- Card body ---- */
 
-.listing-card-header {
+.listing-card-body {
+  padding: 16px 18px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ---- Price row ---- */
+
+.listing-price-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
+  align-items: baseline;
+  gap: 8px;
 }
 
-.listing-rank,
-.listing-ref {
-  font-size: 0.85rem;
-  color: #587084;
+.listing-price {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #1f5f8b;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
-.listing-card h2 {
-  margin: 0 0 4px;
-  font-size: 1.1rem;
+.listing-rooms {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #7a93a8;
+  white-space: nowrap;
+}
+
+/* ---- Title & meta ---- */
+
+.listing-title {
+  margin: 0;
+  font-size: 1.05rem;
   font-weight: 700;
-  line-height: 1.3;
+  line-height: 1.35;
   color: #142233;
 }
 
 .listing-meta {
-  margin: 0 0 6px;
-  color: #4a6070;
+  margin: 0;
+  color: #5a7385;
+  font-size: 0.9rem;
   line-height: 1.4;
-  font-size: 0.97rem;
-}
-
-.listing-price {
-  margin: 0 0 10px;
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: #1f5f8b;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
 }
 
 /* ---- Reason badges ---- */
@@ -194,46 +210,69 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
-  margin: 0 0 8px;
 }
 
 .reason-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  border-radius: 6px;
-  padding: 4px 9px;
-  font-size: 0.84rem;
+  gap: 5px;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.82rem;
   line-height: 1.3;
   font-weight: 500;
 }
 
 .reason-icon {
-  font-size: 0.8em;
-  opacity: 0.85;
+  font-size: 0.78em;
+  opacity: 0.75;
 }
 
-.reason-badge--positive  { background: #d6f0e0; color: #1a6b3a; }
-.reason-badge--moderate  { background: #fdf3d8; color: #7a5a00; }
-.reason-badge--negative  { background: #f5e0e0; color: #8b2424; }
-.reason-badge--price     { background: #dceef9; color: #1a4870; }
-.reason-badge--transit   { background: #e8eef4; color: #3a4f60; }
-.reason-badge--info      { background: #eef0f2; color: #4a5660; }
+.reason-badge--positive  { background: #d4f0e0; color: #176637; }
+.reason-badge--moderate  { background: #fef3d0; color: #7a5500; }
+.reason-badge--negative  { background: #fce8e8; color: #8b2020; }
+.reason-badge--price     { background: #dbeeff; color: #1a4c7a; }
+.reason-badge--transit   { background: #e6eef5; color: #385060; }
+.reason-badge--info      { background: #edf0f3; color: #4a5a68; }
 
 /* ---- Feature badges ---- */
 
 .feature-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 5px;
 }
 
 .feature-badge {
   border-radius: 999px;
-  padding: 4px 10px;
-  background: #edf4f8;
-  color: #35566f;
-  font-size: 0.84rem;
+  padding: 3px 10px;
+  background: #e8f0f6;
+  color: #375567;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* ---- Card footer ---- */
+
+.listing-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid rgba(20, 34, 51, 0.07);
+  margin-top: 2px;
+}
+
+.listing-rank {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1f5f8b;
+  letter-spacing: 0.02em;
+}
+
+.listing-ref {
+  font-size: 0.75rem;
+  color: #9ab0be;
 }
 
 /* ---- Map ---- */
