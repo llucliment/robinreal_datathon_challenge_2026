@@ -9,6 +9,8 @@ type RankedListProps = {
   onSelect: (listingId: string) => void;
   onOpenDetail: (listingId: string) => void;
   onInteract?: (listingId: string, eventType: "image_browse") => void;
+  comparisonIds: string[];
+  onToggleComparison: (listingId: string) => void;
 };
 
 function formatPrice(price: number): string {
@@ -47,7 +49,7 @@ function getImageUrls(listing: RankedListingResult["listing"]): string[] {
   return Array.from(new Set(candidates));
 }
 
-export default function RankedList({ results, selectedId, onSelect, onOpenDetail, onInteract }: RankedListProps) {
+export default function RankedList({ results, selectedId, onSelect, onOpenDetail, onInteract, comparisonIds, onToggleComparison }: RankedListProps) {
   const [imageIndexes, setImageIndexes] = useState<Record<string, number>>({});
   const touchStartXRef = useRef<Record<string, number>>({});
   const cardRefs = useRef<Record<string, HTMLElement | null>>({});
@@ -187,9 +189,24 @@ export default function RankedList({ results, selectedId, onSelect, onOpenDetail
                 </div>
               )}
 
-              {/* Footer: rank + ref */}
+              {/* Footer: rank + compare toggle + ref */}
               <div className="listing-card-footer">
                 <span className="listing-rank">#{index + 1}</span>
+                <button
+                  type="button"
+                  className={`compare-toggle ${comparisonIds.includes(result.listing_id) ? "compare-toggle--active" : ""}`}
+                  onClick={(e) => { e.stopPropagation(); onToggleComparison(result.listing_id); }}
+                  disabled={!comparisonIds.includes(result.listing_id) && comparisonIds.length >= 3}
+                  title={
+                    comparisonIds.includes(result.listing_id)
+                      ? "Remove from comparison"
+                      : comparisonIds.length >= 3
+                        ? "Max 3 listings"
+                        : "Add to comparison"
+                  }
+                >
+                  {comparisonIds.includes(result.listing_id) ? "✓ Compare" : "+ Compare"}
+                </button>
                 <span className="listing-ref">ref {listing.id}</span>
               </div>
             </div>

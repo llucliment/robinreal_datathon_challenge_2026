@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import ComparisonTable from "./components/ComparisonTable";
 import ListingDetail from "./components/ListingDetail";
 import ListingsMap from "./components/ListingsMap";
 import QueryBar from "./components/QueryBar";
@@ -67,6 +68,10 @@ export default function App() {
 
   // Detail overlay state
   const [detailId, setDetailId] = useState<string | null>(null);
+
+  // Comparison state
+  const [comparisonIds, setComparisonIds] = useState<string[]>([]);
+  const [showComparison, setShowComparison] = useState(false);
 
   // Dwell-time tracking
   const dwellRef = useRef<{ id: string; startedAt: number } | null>(null);
@@ -144,6 +149,19 @@ export default function App() {
 
   const handleCloseDetail = () => setDetailId(null);
 
+  const handleToggleComparison = (listingId: string) => {
+    setComparisonIds((prev) => {
+      if (prev.includes(listingId)) return prev.filter((id) => id !== listingId);
+      if (prev.length >= 3) return prev;
+      return [...prev, listingId];
+    });
+  };
+
+  const comparisonResults = useMemo(
+    () => comparisonIds.map((id) => results.find((r) => r.listing_id === id)).filter(Boolean) as typeof results,
+    [comparisonIds, results],
+  );
+
   const handleInteract = (listingId: string, eventType: "image_browse") => {
     logInteraction(userId, listingId, eventType, lastQuery);
   };
@@ -187,7 +205,19 @@ export default function App() {
             onSelect={handleSelect}
             onOpenDetail={handleOpenDetail}
             onInteract={handleInteract}
+            comparisonIds={comparisonIds}
+            onToggleComparison={handleToggleComparison}
           />
+          {comparisonIds.length >= 2 && (
+            <button
+              type="button"
+              className="compare-fab"
+              onClick={() => setShowComparison(true)}
+            >
+              <span className="compare-fab-count">{comparisonIds.length}</span>
+              Compare listings
+            </button>
+          )}
         </aside>
 
         <main className="map-panel">
@@ -204,6 +234,18 @@ export default function App() {
 
       {detailResult && (
         <ListingDetail result={detailResult} onClose={handleCloseDetail} />
+      )}
+
+      {showComparison && comparisonResults.length >= 2 && (
+        <ComparisonTable
+          listings={comparisonResults}
+          onClose={() => setShowComparison(false)}
+          onOpenDetail={(id) => { setShowComparison(false); handleOpenDetail(id); }}
+          onRemove={(id) => {
+            handleToggleComparison(id);
+            if (comparisonResults.length <= 2) setShowComparison(false);
+          }}
+        />
       )}
     </>
   );
