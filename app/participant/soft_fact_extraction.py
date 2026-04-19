@@ -27,7 +27,7 @@ def extract_soft_facts(query: str) -> dict[str, Any]:
 def _extract_with_llm(query: str) -> dict[str, Any]:
     import anthropic
 
-    client = anthropic.Anthropic()
+    client = anthropic.Anthropic(timeout=5.0)
 
     tool = {
         "name": "set_soft_criteria",

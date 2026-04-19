@@ -229,7 +229,7 @@ def extract_hard_facts(query: str) -> HardFilters:
 def _extract_with_llm(query: str) -> HardFilters:
     import anthropic
 
-    client = anthropic.Anthropic()
+    client = anthropic.Anthropic(timeout=5.0)
 
     tool = {
         "name": "set_hard_filters",
